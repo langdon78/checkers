@@ -71,7 +71,7 @@ class Game {
                         let move = Navigator.getMove(direction: direction, numberOfSpaces: 1)
                         let coordinates = Navigator.moved(from: occupied.currentCoordinate, with: move)
                         if board[coordinates].occupied == nil {
-                            board = Board.update(board: &board, with: .showMoveable(occupied.currentCoordinate))
+                            board = Board.update(board: board, with: .showMoveable(occupied.currentCoordinate))
                         }
                     }
                 }
@@ -84,7 +84,7 @@ class Game {
             let move = Navigator.getMove(direction: direction, numberOfSpaces: 1)
             let coordinate = Navigator.moved(from: selectedCoordinate, with: move)
             if board[coordinate].occupied == nil {
-                board = Board.update(board: &board, with: .showOccupiable(coordinate))
+                board = Board.update(board: board, with: .showOccupiable(coordinate))
             }
         }
     }

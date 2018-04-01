@@ -171,33 +171,30 @@ struct Board {
         if let selected = board.selected, selected.coordinate != coordinate {
             updatedBoard = Board.toggleAllSelected(on: board)
         }
-        return Board.update(board: &updatedBoard, with: .select(coordinate))
+        return Board.update(board: updatedBoard, with: .select(coordinate))
     }
     
     static func move(checker: Checker, on board: Board, from: Coordinate, to: Coordinate) -> Board {
         var board = board
-        board = update(board: &board, with: .remove(from))
-        board = update(board: &board, with: .occupy(to, checker))
+        board = update(board: board, with: .remove(from))
+        board = update(board: board, with: .occupy(to, checker))
         return board
     }
     
     static func toggleAllSelected(on board: Board) -> Board {
-        var updatedBoard = board
         return board.selected
-            .flatMap { Board.update(board: &updatedBoard, with: .clear(.select($0.coordinate))) } ?? board
+            .flatMap { Board.update(board: board, with: .clear(.select($0.coordinate))) } ?? board
     }
     
     static func toggleAllMoveable(on board: Board) -> Board {
-        var updatedBoard = board
         return board.moveable
-            .map { Board.update(board: &updatedBoard, with: .clear(.showMoveable($0.coordinate))) }
+            .map { Board.update(board: board, with: .clear(.showMoveable($0.coordinate))) }
             .last ?? board
     }
     
     static func toggleAllOccupiable(on board: Board) -> Board {
-        var updatedBoard = board
         return board.occupiable
-            .map { Board.update(board: &updatedBoard, with: .clear(.showOccupiable($0.coordinate))) }
+            .map { Board.update(board: board, with: .clear(.showOccupiable($0.coordinate))) }
             .last ?? board
     }
     
@@ -225,7 +222,7 @@ struct Board {
             .map { Checker(currentCoordinate: $0, side: .bottom, isKing: false) }
         let checkers = topCheckers + bottomCheckers
         checkers
-            .forEach { updatedBoard = Board.update(board: &updatedBoard, with: .occupy($0.currentCoordinate, $0))}
+            .forEach { updatedBoard = Board.update(board: updatedBoard, with: .occupy($0.currentCoordinate, $0))}
         return updatedBoard
     }
     
@@ -235,7 +232,7 @@ struct Board {
         return board
     }
     
-    static func update(board: inout Board, with action: BoardAction) -> Board {
+    static func update(board: Board, with action: BoardAction) -> Board {
         switch action {
         case .select(let coordinate):
             return updateSpace(on: board, for: coordinate) { space in
@@ -259,9 +256,9 @@ struct Board {
             }
         case .clear(let action):
             switch action {
-            case .showOccupiable( _): return Board.update(board: &board, with: action)
-            case .showMoveable( _): return Board.update(board: &board, with: action)
-            case .select( _): return Board.update(board: &board, with: action)
+            case .showOccupiable( _): return Board.update(board: board, with: action)
+            case .showMoveable( _): return Board.update(board: board, with: action)
+            case .select( _): return Board.update(board: board, with: action)
             default:
                 return board
             }
