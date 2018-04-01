@@ -193,9 +193,10 @@ struct Board {
     }
     
     static func toggleAllOccupiable(on board: Board) -> Board {
-        return board.occupiable
-            .map { Board.update(board: board, with: .clear(.showOccupiable($0.coordinate))) }
-            .last ?? board
+        var updatedBoard = board
+        updatedBoard.occupiable
+            .forEach { updatedBoard = Board.update(board: updatedBoard, with: .clear(.showOccupiable($0.coordinate))) }
+        return updatedBoard
     }
     
     private func generate() -> [[Space]] {
