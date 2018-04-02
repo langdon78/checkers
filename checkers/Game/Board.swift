@@ -162,6 +162,15 @@ struct Board {
         self.spaces = generate()
     }
     
+    func checkers(for side: Side) -> [Checker] {
+        switch side {
+        case .top:
+            return top
+        default:
+            return bottom
+        }
+    }
+    
     private func coordinate(for space: Space) -> Coordinate {
         return space.coordinate
     }
@@ -203,8 +212,8 @@ struct Board {
         var row: [Space] = []
         var spaces: [[Space]] = []
         var playable = false
-        for x in 1...Board.length {
-            for y in 1...Board.length {
+        for x in 0...Board.length - 1 {
+            for y in 0...Board.length - 1 {
                 row.append(Space(playable: !playable, coordinate: Coordinate(right: y, down: x)))
                 playable = !playable
             }
