@@ -46,8 +46,12 @@ class Game {
                 board = Board.selectSpace(for: coordinate, on: board)
             case .move(let coordinate):
                 print("moved")
-//                guard let lastSelected = board.selected?.coordinate else { return board }
-//                guard var checker = board[lastSelected].occupied else { return board }
+                guard
+                    let lastSelected = board.selected?.coordinate,
+                    let checker = board[lastSelected].occupied
+                    else { return board }
+                board = Board.move(checker: checker, on: board, from: lastSelected, to: coordinate)
+//
 //                checker.move(to: coordinate)
 //                board.place(checker)
 //                currentTurn.playerMoves.append(moveAction)
