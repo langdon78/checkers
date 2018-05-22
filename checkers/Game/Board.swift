@@ -1,5 +1,10 @@
 import Foundation
 
+enum Side {
+    case top
+    case bottom
+}
+
 struct Player: Equatable {
     var name: String
     var side: Side
@@ -18,35 +23,10 @@ extension Bool {
     }
 }
 
-enum Side {
-    case top
-    case bottom
-}
-
-enum TurnAction {
-    case start(MoveAction)
-    case end
-}
-
-enum MoveAction {
-    case select(Coordinate)
-    case deselect(Coordinate)
-    case move(Coordinate)
-}
-
-struct Checker: Moveable, Equatable {
+struct Checker: Equatable {
     var currentCoordinate: Coordinate
     var side: Side
     var isKing: Bool = false
-    
-    mutating func move(direction: Direction, movementType: MovementType = .normal) {
-        let move = Navigator.getMove(direction: direction, numberOfSpaces: movementType.rawValue)
-        currentCoordinate = Navigator.moved(from: currentCoordinate, with: move)
-    }
-    
-    mutating func move(to coordinates: Coordinate) {
-        currentCoordinate = coordinates
-    }
 }
 
 struct Space: Equatable {
@@ -56,6 +36,7 @@ struct Space: Equatable {
     var moveable: Bool = false
     var occupiable: Bool = false
     var coordinate: Coordinate
+    var jumped: Checker?
     
     init(playable: Bool, coordinate: Coordinate) {
         self.playable = playable
@@ -67,15 +48,6 @@ struct Space: Equatable {
         self.occupied = occupied
         self.coordinate = coordinate
     }
-}
-
-indirect enum BoardAction {
-    case showOccupiable(Coordinate)
-    case showMoveable(Coordinate)
-    case select(Coordinate)
-    case occupy(Coordinate, Checker)
-    case remove(Coordinate)
-    case clear(BoardAction)
 }
 
 struct Board {
@@ -149,6 +121,7 @@ struct Board {
     subscript(x: Int, y: Int) -> Space {
         return spaces[y][x]
     }
+    
     subscript(c: Coordinate) -> Space {
         get {
             return spaces[c.down][c.right]
@@ -175,43 +148,10 @@ struct Board {
         return space.coordinate
     }
     
-    static func selectSpace(for coordinate: Coordinate, on board: Board) -> Board {
-        var updatedBoard = board
-        if let selected = board.selected, selected.coordinate != coordinate {
-            updatedBoard = Board.toggleAllSelected(on: board)
-        }
-        return Board.update(board: updatedBoard, with: .select(coordinate))
-    }
-    
-    static func move(checker: Checker, on board: Board, from: Coordinate, to: Coordinate) -> Board {
-        var board = board
-        board = update(board: board, with: .remove(from))
-        board = update(board: board, with: .occupy(to, checker))
-        return board
-    }
-    
-    static func toggleAllSelected(on board: Board) -> Board {
-        return board.selected
-            .flatMap { Board.update(board: board, with: .clear(.select($0.coordinate))) } ?? board
-    }
-    
-    static func toggleAllMoveable(on board: Board) -> Board {
-        return board.moveable
-            .map { Board.update(board: board, with: .clear(.showMoveable($0.coordinate))) }
-            .last ?? board
-    }
-    
-    static func toggleAllOccupiable(on board: Board) -> Board {
-        var updatedBoard = board
-        updatedBoard.occupiable
-            .forEach { updatedBoard = Board.update(board: updatedBoard, with: .clear(.showOccupiable($0.coordinate))) }
-        return updatedBoard
-    }
-    
     private func generate() -> [[Space]] {
         var row: [Space] = []
         var spaces: [[Space]] = []
-        var playable = false
+        var playable = true
         for x in 0...Board.length - 1 {
             for y in 0...Board.length - 1 {
                 row.append(Space(playable: !playable, coordinate: Coordinate(right: y, down: x)))
@@ -224,54 +164,49 @@ struct Board {
         return spaces
     }
     
-    static func layoutCheckers(for board: Board) -> Board {
-        var updatedBoard = board
-        let topCheckers = topStartingCoordinates
+    mutating func layoutCheckers() {
+        let topCheckers = Board.topStartingCoordinates
             .map { Checker(currentCoordinate: $0, side: .top, isKing: false) }
-        let bottomCheckers = BottomStartingCoordinates
+        let bottomCheckers = Board.BottomStartingCoordinates
             .map { Checker(currentCoordinate: $0, side: .bottom, isKing: false) }
         let checkers = topCheckers + bottomCheckers
         checkers
-            .forEach { updatedBoard = Board.update(board: updatedBoard, with: .occupy($0.currentCoordinate, $0))}
-        return updatedBoard
-    }
-    
-    static private func updateSpace(on board: Board, for coordinate: Coordinate, with update: (inout Space) -> Void) -> Board {
-        var board = board
-        update(&board[coordinate])
-        return board
-    }
-    
-    static func update(board: Board, with action: BoardAction) -> Board {
-        switch action {
-        case .select(let coordinate):
-            return updateSpace(on: board, for: coordinate) { space in
-                space.selected.toggle()
-            }
-        case .showMoveable(let coordinate):
-            return updateSpace(on: board, for: coordinate) { space in
-                space.moveable.toggle()
-            }
-        case .showOccupiable(let coordinate):
-            return updateSpace(on: board, for: coordinate) { space in
-                space.occupiable.toggle()
-            }
-        case .occupy(let coordinate, let checker):
-            return updateSpace(on: board, for: coordinate) { space in
-                space.occupied = checker
-            }
-        case .remove(let coordinate):
-            return updateSpace(on: board, for: coordinate) { space in
-                space.occupied = nil
-            }
-        case .clear(let action):
-            switch action {
-            case .showOccupiable( _): return Board.update(board: board, with: action)
-            case .showMoveable( _): return Board.update(board: board, with: action)
-            case .select( _): return Board.update(board: board, with: action)
-            default:
-                return board
-            }
+            .forEach { checker in
+                self[checker.currentCoordinate].occupied = checker
+                self[checker.currentCoordinate].occupied?.currentCoordinate = checker.currentCoordinate
         }
+    }
+    
+    mutating func selectSpace(for coordinate: Coordinate) {
+        if let selected = selected, selected.coordinate != coordinate {
+            toggleAllSelected()
+        }
+        self[coordinate].selected.toggle()
+    }
+    
+    mutating func move(checker: Checker, from previousCoordinate: Coordinate, to currentCoordinate: Coordinate) {
+        self[previousCoordinate].occupied = nil
+        self[previousCoordinate].moveable.toggle()
+        self[currentCoordinate].occupied = checker
+        self[currentCoordinate].occupied?.currentCoordinate = currentCoordinate
+    }
+    
+    mutating func toggleAllSelected() {
+        selected
+            .flatMap { self[$0.coordinate].selected.toggle() }
+    }
+    
+    mutating func toggleAllMoveable() {
+        moveable
+            .forEach { self[$0.coordinate].moveable.toggle() }
+    }
+    
+    mutating func toggleAllOccupiable() {
+        occupiable
+            .forEach { self[$0.coordinate].occupiable.toggle() }
+    }
+    
+    mutating func availableMoves(for checker: Checker) {
+        self = Navigator.boardWithAvailableMoves(for: checker.currentCoordinate, isKing: checker.isKing, board: self, side: checker.side)
     }
 }

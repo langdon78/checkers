@@ -36,11 +36,7 @@ class ViewController: UIViewController {
             var posX = 0
             for space in row {
                 let spaceView = SpaceView(coordinate: Coordinate(right: posX, down: posY), space: space)
-                spaceView.backgroundColor = space.playable ? .red : .black
-                if let checker = space.occupied {
-                    spaceView.addSubview(CheckerView(checker: checker, frame: CGRect(x: 0, y: 0, width: 20, height: 20)))
-                    
-                }
+                spaceView.backgroundColor = space.playable ? .black : .red
                 spaceView.addTarget(self, action: #selector(selectSpace), for: .touchUpInside)
                 boardView.addSubview(spaceView)
                 posX += 1
