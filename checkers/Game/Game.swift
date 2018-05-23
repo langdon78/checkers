@@ -19,8 +19,16 @@ class Game {
     var timeline: [Turn] = []
     var currentTurn: Turn
     
-    var playerTop: Player
-    var playerBottom: Player
+    var playerTop: Player {
+        didSet {
+            delegate?.boardDidUpdate()
+        }
+    }
+    var playerBottom: Player {
+        didSet {
+            delegate?.boardDidUpdate()
+        }
+    }
     var board: Board {
         didSet {
             delegate?.boardDidUpdate()
@@ -64,6 +72,12 @@ class Game {
                 board.move(checker: checker, from: lastSelected, to: coordinate)
                 if let jumpedChecker = board[coordinate].jumped {
                     board[jumpedChecker.currentCoordinate].occupied = nil
+                    if currentTurn.player == playerTop {
+                        playerTop.captured.append(jumpedChecker)
+                    } else {
+                        playerBottom.captured.append(jumpedChecker)
+                    }
+                    
                 }
                 board = takeTurn(action: .start(.deselect(lastSelected)))
                 board = takeTurn(action: .end)

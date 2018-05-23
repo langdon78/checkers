@@ -1,6 +1,9 @@
 import UIKit
 
 class ViewController: UIViewController {
+    
+    @IBOutlet weak var topCheckers: UICollectionView!
+    @IBOutlet weak var bottomCheckers: UICollectionView!
 
     var game: Game! {
         didSet {
@@ -23,6 +26,8 @@ class ViewController: UIViewController {
     
     func refresh() {
         createBoard(game.board)
+        topCheckers.reloadData()
+        bottomCheckers.reloadData()
     }
     
     func createBoard(_ board: Board) {
@@ -61,4 +66,33 @@ extension ViewController: GameDelegate {
     func boardDidUpdate() {
         refresh()
     }
+}
+
+// MARK: CollectionView data source
+extension ViewController: UICollectionViewDataSource {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if collectionView === topCheckers {
+            return game.playerTop.captured.count
+        } else {
+            return game.playerBottom.captured.count
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath)
+        var checker: Checker?
+        if collectionView === topCheckers {
+            checker = game.playerTop.captured[indexPath.row]
+        } else {
+            checker = game.playerBottom.captured[indexPath.row]
+        }
+        let circlePath = UIBezierPath(arcCenter: CGPoint(x: 25,y: 25), radius: CGFloat(12.5), startAngle: CGFloat(0), endAngle:CGFloat(Double.pi * 2), clockwise: true)
+        let shapeLayer = CAShapeLayer()
+        shapeLayer.path = circlePath.cgPath
+        shapeLayer.fillColor = checker?.side == .top ? UIColor.white.cgColor : UIColor.red.cgColor
+        cell.layer.addSublayer(shapeLayer)
+        return cell
+    }
+    
+    
 }
