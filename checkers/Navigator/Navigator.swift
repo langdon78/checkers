@@ -31,25 +31,25 @@ public enum MovementType: Int {
 public struct Move {
     public var x: AxialDirection
     public var y: AxialDirection
-    public var numberOfSpaces: Int
+    public var movementType: MovementType
 }
 
 struct Navigator {
     public static let upperBounds = Board.length
     public static let lowerBounds = 0
     
-    public static func move(for direction: Direction, numberOfSpaces: Int) -> Move {
+    public static func move(for direction: Direction, movementType: MovementType) -> Move {
         switch direction {
-        case .lowerLeft: return Move(x: -, y: +, numberOfSpaces: numberOfSpaces)
-        case .lowerRight: return Move(x: +, y: +, numberOfSpaces: numberOfSpaces)
-        case .upperLeft: return Move(x: -, y: -, numberOfSpaces: numberOfSpaces)
-        case .upperRight: return Move(x: +, y: -, numberOfSpaces: numberOfSpaces)
+        case .lowerLeft: return Move(x: -, y: +, movementType: movementType)
+        case .lowerRight: return Move(x: +, y: +, movementType: movementType)
+        case .upperLeft: return Move(x: -, y: -, movementType: movementType)
+        case .upperRight: return Move(x: +, y: -, movementType: movementType)
         }
     }
     
     public static func coordinate(from start: Coordinate, with move: Move) -> Coordinate {
-        let horizontalMove = move.x(start.right, move.numberOfSpaces)
-        let verticalMove = move.y(start.down, move.numberOfSpaces)
+        let horizontalMove = move.x(start.right, move.movementType.rawValue)
+        let verticalMove = move.y(start.down, move.movementType.rawValue)
         guard horizontalMove < upperBounds, horizontalMove >= lowerBounds, verticalMove < upperBounds, verticalMove >= lowerBounds else {
             return start
         }
@@ -60,7 +60,7 @@ struct Navigator {
         var board = board
         let directions = availableDirections(for: side, isKing: isKing)
         directions.forEach { direction in
-            let move = Navigator.move(for: direction, numberOfSpaces: 1)
+            let move = Navigator.move(for: direction, movementType: .normal)
             let coordinate = Navigator.coordinate(from: selectedCoordinate, with: move)
             if board[coordinate].occupied == nil {
                 board[coordinate].occupiable.toggle()
@@ -73,11 +73,11 @@ struct Navigator {
     
     private static func boardWithAvailableJumps(for selectedCoordinate: Coordinate, in direction: Direction, board: Board, side: Side) -> Board {
         var board = board
-        let move = Navigator.move(for: direction, numberOfSpaces: 2)
+        let move = Navigator.move(for: direction, movementType: .jump)
         let coordinate = Navigator.coordinate(from: selectedCoordinate, with: move)
         if board[coordinate].occupied == nil {
             board[coordinate].occupiable.toggle()
-            let jumpedCheckerMove = Navigator.move(for: direction, numberOfSpaces: 1)
+            let jumpedCheckerMove = Navigator.move(for: direction, movementType: .normal)
             let jumpedCheckerCoordinates = Navigator.coordinate(from: selectedCoordinate, with: jumpedCheckerMove)
             board[coordinate].jumped = board[jumpedCheckerCoordinates].occupied
         }
