@@ -72,19 +72,19 @@ class Game {
                 board.move(checker: checker, from: lastSelected, to: coordinate)
                 if let jumpedChecker = board[coordinate].jumped {
                     board[jumpedChecker.currentCoordinate].occupied = nil
-                    if currentTurn.player == playerTop {
+                    if currentTurn.player.side == playerTop.side {
                         playerTop.captured.append(jumpedChecker)
                     } else {
                         playerBottom.captured.append(jumpedChecker)
                     }
-                    
+                    board[coordinate].jumped = nil
                 }
                 board = takeTurn(action: .start(.deselect(lastSelected)))
                 board = takeTurn(action: .end)
             }
         case .end:
             board.toggleAllMoveable()
-            let nextPlayer = currentTurn.player == playerBottom ? playerTop : playerBottom
+            let nextPlayer = currentTurn.player.side == playerBottom.side ? playerTop : playerBottom
             timeline.append(currentTurn)
             currentTurn = Turn(player: nextPlayer)
             findPlayableCheckers(for: currentTurn.player)
@@ -97,7 +97,7 @@ class Game {
         let playerCheckers = board.checkers(for: currentTurn.player.side)
         for checker in playerCheckers {
             Direction.all.forEach { direction in
-                let move = Navigator.move(for: direction, numberOfSpaces: 1)
+                let move = Navigator.move(for: direction, movementType: .normal)
                 let coordinate = Navigator.coordinate(from: checker.currentCoordinate, with: move)
                 if board[coordinate].occupied == nil, !board.moveable.contains(board[checker.currentCoordinate]) {
                     board[checker.currentCoordinate].moveable.toggle()
