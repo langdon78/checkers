@@ -35,6 +35,10 @@ class SpaceView: UIButton {
         shapeLayer.path = circlePath.cgPath
         shapeLayer.fillColor = backgroundColor?.cgColor
         layer.addSublayer(shapeLayer)
+        if checker.isKing {
+            setTitle("K", for: .normal)
+            setTitleColor(.black, for: .normal)
+        }
     }
     
     required init?(coder aDecoder: NSCoder) {
