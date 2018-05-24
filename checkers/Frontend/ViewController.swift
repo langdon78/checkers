@@ -20,7 +20,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         let player1 = Player(name: "James", side: .top)
         let player2 = Player(name: "Wendy", side: .bottom)
-        game = Game(playerTop: player1, playerBottom: player2)
+        game = Game(playerTop: player1, playerBottom: player2, firstPlayer: player2)
         game.delegate = self
     }
     
