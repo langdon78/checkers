@@ -63,7 +63,6 @@
 			isa = PBXGroup;
 			children = (
 				BC6023162066A32200C7C936 /* Game */,
-				BC6023172066A32B00C7C936 /* Navigator */,
 				BC6023192066A35B00C7C936 /* Frontend */,
 				BC6023182066A33200C7C936 /* Resources */,
 				BC6023042066A2E900C7C936 /* AppDelegate.swift */,
@@ -76,16 +75,9 @@
 			children = (
 				BC60231A2066A3A100C7C936 /* Game.swift */,
 				BC60231C2066A3AD00C7C936 /* Board.swift */,
-			);
-			path = Game;
-			sourceTree = "<group>";
-		};
-		BC6023172066A32B00C7C936 /* Navigator */ = {
-			isa = PBXGroup;
-			children = (
 				BC6023202066A45400C7C936 /* Navigator.swift */,
 			);
-			path = Navigator;
+			path = Game;
 			sourceTree = "<group>";
 		};
 		BC6023182066A33200C7C936 /* Resources */ = {

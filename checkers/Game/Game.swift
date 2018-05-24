@@ -1,21 +1,50 @@
 import Foundation
 
 protocol GameDelegate: class {
+    
     func boardDidUpdate()
+
 }
 
 enum TurnAction {
+    
     case start(MoveAction)
     case end
+
 }
 
 enum MoveAction {
+    
     case select(Coordinate)
     case deselect(Coordinate)
     case move(Coordinate)
+
+}
+
+enum Side {
+    
+    case top
+    case bottom
+
+}
+
+struct Player: Equatable {
+    
+    var name: String
+    var side: Side
+    var checkers: [Checker] = []
+    var captured: [Checker] = []
+    
+    init(name: String, side: Side) {
+        
+        self.name = name
+        self.side = side
+    
+    }
 }
 
 class Game {
+    
     var timeline: [Turn] = []
     var currentTurn: Turn
     
@@ -24,11 +53,13 @@ class Game {
             delegate?.boardDidUpdate()
         }
     }
+    
     var playerBottom: Player {
         didSet {
             delegate?.boardDidUpdate()
         }
     }
+    
     var board: Board {
         didSet {
             delegate?.boardDidUpdate()
@@ -37,17 +68,15 @@ class Game {
     
     weak var delegate: GameDelegate?
     
-    init(playerTop: Player, playerBottom: Player) {
+    init(playerTop: Player, playerBottom: Player, board: Board = Board(), firstPlayer: Player) {
         self.playerTop = playerTop
         self.playerBottom = playerBottom
-        self.currentTurn = Turn(player: playerBottom)
-        
-        self.board = Board()
-
+        self.currentTurn = Turn(player: firstPlayer)
+        self.board = board
         self.playerTop.checkers = board.top
         self.playerBottom.checkers = board.bottom
-        board.layoutCheckers()
-        findPlayableCheckers(for: currentTurn.player)
+        self.board.playableCheckers(for: currentTurn.player)
+        
     }
     
     func takeTurn(action: TurnAction) -> Board {
@@ -63,7 +92,7 @@ class Game {
             case .deselect(let coordinate):
                 board.selectSpace(for: coordinate)
                 board.toggleAllOccupiable()
-                findPlayableCheckers(for: currentTurn.player)
+                board.playableCheckers(for: currentTurn.player)
             case .move(let coordinate):
                 guard
                     let lastSelected = board.selected?.coordinate,
@@ -87,27 +116,15 @@ class Game {
             let nextPlayer = currentTurn.player.side == playerBottom.side ? playerTop : playerBottom
             timeline.append(currentTurn)
             currentTurn = Turn(player: nextPlayer)
-            findPlayableCheckers(for: currentTurn.player)
+            board.playableCheckers(for: currentTurn.player)
         }
         return board
     }
     
-    //TODO: Move to Navigator and fix when near opposing checker
-    func findPlayableCheckers(for player: Player) {
-        let playerCheckers = board.checkers(for: currentTurn.player.side)
-        for checker in playerCheckers {
-            Direction.all.forEach { direction in
-                let move = Navigator.move(for: direction, movementType: .normal)
-                let coordinate = Navigator.coordinate(from: checker.currentCoordinate, with: move)
-                if board[coordinate].occupied == nil, !board.moveable.contains(board[checker.currentCoordinate]) {
-                    board[checker.currentCoordinate].moveable.toggle()
-                }
-            }
-        }
-    }
 }
 
 struct Turn {
+    
     var playerMoves: [MoveAction] = []
     var lastPlayerMove: MoveAction? {
         return playerMoves.last
@@ -117,4 +134,5 @@ struct Turn {
     init(player: Player) {
         self.player = player
     }
+    
 }
