@@ -83,13 +83,11 @@ class Game {
             switch moveAction {
             case .select(let coordinate):
                 guard let checker = board[coordinate].occupied, checker.side == currentTurn.player.side else { return }
-                board.toggleAllSelected()
-                board.toggleAllOccupiable()
+                clearHighlights()
                 board.selectSpace(for: coordinate)
                 board.availableMoves(for: checker)
             case .deselect:
-                board.toggleAllSelected()
-                board.toggleAllOccupiable()
+                clearHighlights()
             case .move(let coordinate):
                 guard
                     let lastSelected = board.selected?.coordinate,
@@ -107,8 +105,7 @@ class Game {
                     board[coordinate].jumped = nil
                     message = "\(currentTurn.player.name) jumped checker at \(jumpedChecker.currentCoordinate.description)"
                 }
-                board.toggleAllSelected()
-                board.toggleAllOccupiable()
+                clearHighlights()
                 print(message)
                 currentTurn.playerMoves.append(board)
                 takeTurn(action: .end)
@@ -120,6 +117,11 @@ class Game {
             currentTurn = Turn(player: nextPlayer)
             board.playableCheckers(for: currentTurn.player)
         }
+    }
+    
+    private func clearHighlights() {
+        board.toggleAllSelected()
+        board.toggleAllOccupiable()
     }
     
 }
