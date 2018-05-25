@@ -7,7 +7,7 @@ class ViewController: UIViewController {
 
     var game: Game! {
         didSet {
-            refresh()
+            refresh(board: game.board)
         }
     }
     
@@ -24,8 +24,8 @@ class ViewController: UIViewController {
         game.delegate = self
     }
     
-    func refresh() {
-        createBoard(game.board)
+    func refresh(board: Board) {
+        createBoard(board)
         topCheckers.reloadData()
         bottomCheckers.reloadData()
     }
@@ -40,7 +40,7 @@ class ViewController: UIViewController {
         for row in board.spaces {
             var posX = 0
             for space in row {
-                let spaceView = SpaceView(coordinate: Coordinate(right: posX, down: posY), space: space)
+                let spaceView = SpaceView(space: space)
                 spaceView.backgroundColor = space.playable ? .black : .red
                 spaceView.addTarget(self, action: #selector(selectSpace), for: .touchUpInside)
                 boardView.addSubview(spaceView)
@@ -50,21 +50,21 @@ class ViewController: UIViewController {
         }
     }
     
-    @objc func selectSpace(_ space: SpaceView) {
-        if space.space.occupiable {
-            game.board = game.takeTurn(action: .start(.move(space.coordinate)))
-        } else if space.space.selected {
-            game.board = game.takeTurn(action: .start(.deselect(space.coordinate)))
+    @objc func selectSpace(_ spaceView: SpaceView) {
+        if spaceView.space.highlightStatus == .occupiable {
+            game.takeTurn(action: .start(.move(spaceView.coordinate)))
+        } else if spaceView.space.highlightStatus == .selected {
+            game.takeTurn(action: .start(.deselect(spaceView.coordinate)))
         } else {
-            game.board = game.takeTurn(action: .start(.select(space.coordinate)))
+            game.takeTurn(action: .start(.select(spaceView.coordinate)))
         }
     }
 }
 
 // MARK: GameDelegate methods
 extension ViewController: GameDelegate {
-    func boardDidUpdate() {
-        refresh()
+    func didUpdate(board: Board) {
+        refresh(board: board)
     }
 }
 

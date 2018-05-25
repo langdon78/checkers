@@ -2,7 +2,7 @@ import Foundation
 
 protocol GameDelegate: class {
     
-    func boardDidUpdate()
+    func didUpdate(board: Board)
 
 }
 
@@ -36,11 +36,10 @@ struct Player: Equatable {
     var captured: [Checker] = []
     
     init(name: String, side: Side) {
-        
         self.name = name
         self.side = side
-    
     }
+    
 }
 
 class Game {
@@ -50,19 +49,19 @@ class Game {
     
     var playerTop: Player {
         didSet {
-            delegate?.boardDidUpdate()
+            delegate?.didUpdate(board: board)
         }
     }
     
     var playerBottom: Player {
         didSet {
-            delegate?.boardDidUpdate()
+            delegate?.didUpdate(board: board)
         }
     }
     
     var board: Board {
         didSet {
-            delegate?.boardDidUpdate()
+            delegate?.didUpdate(board: board)
         }
     }
     
@@ -76,29 +75,27 @@ class Game {
         self.playerTop.checkers = board.top
         self.playerBottom.checkers = board.bottom
         self.board.playableCheckers(for: currentTurn.player)
-        
     }
     
-    func takeTurn(action: TurnAction) -> Board {
+    func takeTurn(action: TurnAction) {
         switch action {
         case .start(let moveAction):
-            currentTurn.playerMoves.append(moveAction)
             switch moveAction {
             case .select(let coordinate):
-                guard let checker = board[coordinate].occupied, checker.side == currentTurn.player.side else { return board }
+                guard let checker = board[coordinate].occupied, checker.side == currentTurn.player.side else { return }
                 board.toggleAllSelected()
                 board.toggleAllOccupiable()
                 board.selectSpace(for: coordinate)
                 board.availableMoves(for: checker)
-            case .deselect(let coordinate):
-                board.selectSpace(for: coordinate)
+            case .deselect:
+                board.toggleAllSelected()
                 board.toggleAllOccupiable()
-                board.playableCheckers(for: currentTurn.player)
             case .move(let coordinate):
                 guard
                     let lastSelected = board.selected?.coordinate,
                     let checker = board[lastSelected].occupied
-                    else { return board }
+                    else { return }
+                var message = "\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)"
                 board.move(checker: checker, from: lastSelected, to: coordinate)
                 if let jumpedChecker = board[coordinate].jumped {
                     board[jumpedChecker.currentCoordinate].occupied = nil
@@ -108,11 +105,13 @@ class Game {
                         playerBottom.captured.append(jumpedChecker)
                     }
                     board[coordinate].jumped = nil
+                    message = "\(currentTurn.player.name) jumped checker at \(jumpedChecker.currentCoordinate.description)"
                 }
-
-                board.selectSpace(for: lastSelected)
+                board.toggleAllSelected()
                 board.toggleAllOccupiable()
-                board = takeTurn(action: .end)
+                print(message)
+                currentTurn.playerMoves.append(board)
+                takeTurn(action: .end)
             }
         case .end:
             board.toggleAllMoveable()
@@ -121,21 +120,13 @@ class Game {
             currentTurn = Turn(player: nextPlayer)
             board.playableCheckers(for: currentTurn.player)
         }
-        return board
     }
     
 }
 
 struct Turn {
     
-    var playerMoves: [MoveAction] = [] {
-        didSet {
-            print(lastPlayerMove)
-        }
-    }
-    var lastPlayerMove: MoveAction? {
-        return playerMoves.last
-    }
+    var playerMoves: [Board] = []
     var player: Player
     
     init(player: Player) {

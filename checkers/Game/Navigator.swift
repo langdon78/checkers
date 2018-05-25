@@ -1,10 +1,13 @@
 import Foundation
 
-public struct Coordinate: Equatable {
+public struct Coordinate: Equatable, CustomStringConvertible {
     
     public var right: Int
     public var down: Int
 
+    public var description: String {
+        return "[\(right), \(down)]"
+    }
 }
 
 public typealias AxialDirection = (Int,Int) -> Int
@@ -70,7 +73,7 @@ extension Navigator {
                     let jumpedCheckerCoordinate = Navigator.coordinate(from: selectedCoordinate, for: direction, with: .normal)
                     board[coordinate].jumped = board[jumpedCheckerCoordinate].occupied
                 }
-                board[coordinate].occupiable.toggle()
+                board[coordinate].highlightStatus = .occupiable
                 return true
             }
         }

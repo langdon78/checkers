@@ -8,6 +8,14 @@ extension Bool {
     
 }
 
+extension String {
+    
+    static var empty: String {
+        return ""
+    }
+    
+}
+
 struct Checker: Equatable {
     
     var currentCoordinate: Coordinate {
@@ -26,12 +34,20 @@ struct Checker: Equatable {
 
 }
 
+enum SpaceHighlightStatus {
+    
+    case none
+    case selected
+    case occupiable
+    case occupiableByJump
+    
+}
+
 struct Space: Equatable {
 
     var playable: Bool
     var occupied: Checker?
-    var selected: Bool = false
-    var occupiable: Bool = false
+    var highlightStatus: SpaceHighlightStatus = .none
     var coordinate: Coordinate
     var jumped: Checker?
     
@@ -82,7 +98,7 @@ struct Board {
     var occupiable: [Space] {
         return spaces
             .flatMap { $0 }
-            .filter { $0.occupiable }
+            .filter { $0.highlightStatus == .occupiable }
     }
     
     var moveable: [Space] {
@@ -94,7 +110,7 @@ struct Board {
     var selected: Space? {
         return spaces
             .flatMap { $0 }
-            .filter { $0.selected }
+            .filter { $0.highlightStatus == .selected }
             .last
     }
     
@@ -207,7 +223,7 @@ extension Board {
         if let selected = selected, selected.coordinate != coordinate {
             toggleAllSelected()
         }
-        self[coordinate].selected.toggle()
+        self[coordinate].highlightStatus = .selected
     }
     
     public mutating func move(checker: Checker, from previousCoordinate: Coordinate, to currentCoordinate: Coordinate) {
@@ -219,7 +235,7 @@ extension Board {
     
     public mutating func toggleAllSelected() {
         selected
-            .flatMap { self[$0.coordinate].selected.toggle() }
+            .flatMap { self[$0.coordinate].highlightStatus = .none }
     }
     
     public mutating func toggleAllMoveable() {
@@ -229,7 +245,7 @@ extension Board {
     
     public mutating func toggleAllOccupiable() {
         occupiable
-            .forEach { self[$0.coordinate].occupiable.toggle() }
+            .forEach { self[$0.coordinate].highlightStatus = .none }
     }
     
     public mutating func availableMoves(for checker: Checker) {
