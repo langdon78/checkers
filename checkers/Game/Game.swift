@@ -82,6 +82,7 @@ class Game {
     func takeTurn(action: TurnAction) -> Board {
         switch action {
         case .start(let moveAction):
+            currentTurn.playerMoves.append(moveAction)
             switch moveAction {
             case .select(let coordinate):
                 guard let checker = board[coordinate].occupied, checker.side == currentTurn.player.side else { return board }
@@ -108,7 +109,9 @@ class Game {
                     }
                     board[coordinate].jumped = nil
                 }
-                board = takeTurn(action: .start(.deselect(lastSelected)))
+
+                board.selectSpace(for: lastSelected)
+                board.toggleAllOccupiable()
                 board = takeTurn(action: .end)
             }
         case .end:
@@ -125,7 +128,11 @@ class Game {
 
 struct Turn {
     
-    var playerMoves: [MoveAction] = []
+    var playerMoves: [MoveAction] = [] {
+        didSet {
+            print(lastPlayerMove)
+        }
+    }
     var lastPlayerMove: MoveAction? {
         return playerMoves.last
     }

@@ -129,7 +129,7 @@ extension Navigator {
         if board[coordinate].occupied == nil {
             return action(coordinate, movementType)
         } else if board[coordinate].occupied?.side != side && movementType == .normal {
-            evaluateSpace(for: selectedCoordinate, on: board, with: direction, movementType: .jump, side: side, action: action)
+            return evaluateSpace(for: selectedCoordinate, on: board, with: direction, movementType: .jump, side: side, action: action)
         }
         return false
     }
