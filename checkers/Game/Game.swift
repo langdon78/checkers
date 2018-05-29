@@ -85,35 +85,45 @@ class Game {
                 guard let checker = board[coordinate].occupied, checker.side == currentTurn.player.side else { return }
                 clearHighlights()
                 board.selectSpace(for: coordinate)
-                board.availableMoves(for: checker)
+                currentTurn.availableMoves = board.availableMoves(for: checker)
+                print(currentTurn.availableMoves)
             case .deselect:
                 clearHighlights()
+                currentTurn.availableMoves = nil
             case .move(let coordinate):
-                guard
-                    let lastSelected = board.selected?.coordinate,
-                    let checker = board[lastSelected].occupied
-                    else { return }
-                print("\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)")
-                board.move(checker: checker, from: lastSelected, to: coordinate)
-                if board[coordinate].highlightStatus == .occupiableByJump {
-                    let jumpableCheckers = Navigator.jumpedCheckers(for: lastSelected, to: coordinate, on: board)
-                    jumpableCheckers.forEach { jumpedChecker in
-                        board[jumpedChecker.currentCoordinate].occupied = nil
-                        if currentTurn.player.side == playerTop.side {
-                            playerTop.captured.append(jumpedChecker)
-                        } else {
-                            playerBottom.captured.append(jumpedChecker)
+                let moves = currentTurn.availableMoves?.selectPath(with: coordinate).reversed()
+                
+                for move in moves! {
+                    let coordinate = move.startingCoordinate
+                    guard
+                        let lastSelected = board.selected?.coordinate,
+                        let checker = board[lastSelected].occupied
+                        else { return }
+                    print("\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)")
+                    
+                    board.move(checker: checker, from: lastSelected, to: coordinate)
+                    
+                    if board[coordinate].highlightStatus == .occupiableByJump {
+                        let jumpableCheckers = Navigator.jumpedCheckers(for: lastSelected, to: coordinate, on: board)
+                        jumpableCheckers.forEach { jumpedChecker in
+                            board[jumpedChecker.currentCoordinate].occupied = nil
+                            if currentTurn.player.side == playerTop.side {
+                                playerTop.captured.append(jumpedChecker)
+                            } else {
+                                playerBottom.captured.append(jumpedChecker)
+                            }
+                            board.selectSpace(for: coordinate)
+                            print("\(currentTurn.player.name) jumped checker at \(jumpedChecker.currentCoordinate.description)")
                         }
-                        board.selectSpace(for: coordinate)
-                        print("\(currentTurn.player.name) jumped checker at \(jumpedChecker.currentCoordinate.description)")
+                    }
+                    
+                    currentTurn.playerMoves.append(board)
+                    if board.occupiableByJump.isEmpty {
+                        clearHighlights()
+                        takeTurn(action: .end)
                     }
                 }
-
-                currentTurn.playerMoves.append(board)
-                if board.occupiableByJump.isEmpty {
-                    clearHighlights()
-                    takeTurn(action: .end)
-                }
+  
             }
         case .end:
             board.toggleAllMoveable()
@@ -135,6 +145,7 @@ struct Turn {
     
     var playerMoves: [Board] = []
     var player: Player
+    var availableMoves: Path?
     
     init(player: Player) {
         self.player = player

@@ -52,6 +52,55 @@ struct Navigator {
     
 }
 
+struct Move {
+    var startingCoordinate: Coordinate
+    var direction: Direction
+    var movementType: MovementType
+    var endingCoordinate: Coordinate? {
+        return Navigator.coordinate(with: Move(startingCoordinate: startingCoordinate, direction: direction, movementType: movementType))
+    }
+}
+
+struct Path {
+    var paths: [Int: [Move]]
+    var nextIndex: Int {
+        guard let highestIndex = paths.sorted(by: { $0.key > $1.key }).first else { return 0 }
+        return highestIndex.key + 1
+    }
+    
+    func continuedPaths(coordinate: Coordinate?) -> [Int] {
+        return paths
+            .filter { path in
+            guard let lastCoordinate = path.value.last?.startingCoordinate else { return false }
+            return coordinate == lastCoordinate
+            }.map {
+                $0.key
+        }
+    }
+    
+    func selectPath(with coordinate: Coordinate) -> [Move] {
+        guard let path = paths
+            .filter({ $0.value
+                .contains(where: {$0.startingCoordinate == coordinate }) })
+            .first?.value
+            else { return [] }
+        return path
+    }
+    
+    mutating func add(move: Move) {
+        let keys = continuedPaths(coordinate: move.endingCoordinate)
+        if keys.isEmpty {
+            paths.updateValue([move], forKey: nextIndex)
+        } else {
+            for key in keys {
+                var moves = paths[key]!
+                moves.append(move)
+                paths.updateValue(moves, forKey: key)
+            }
+        }
+    }
+}
+
 // MARK: - Public API
 extension Navigator {
     
@@ -60,30 +109,30 @@ extension Navigator {
             isKing: Bool,
             board: Board,
             side: Side,
-            movementType: MovementType
-        ) -> Board {
+            movementType: MovementType,
+            path: Path
+        ) -> Path {
         
-        var board = board
+        var path = path
         let directions = availableDirections(for: side, isKing: isKing)
         
         directions.forEach { direction in
             evaluateSpace(for: selectedCoordinate, on: board, with: direction, movementType: movementType, side: side) { (coordinate, movementType) in
                 if movementType == .jump {
+                    let move = Move(startingCoordinate: selectedCoordinate, direction: direction, movementType: .normal)
                     guard
-                        let jumpedCheckerCoordinate = Navigator.coordinate(from: selectedCoordinate, for: direction, with: .normal),
-                        let jumpedChecker = board[jumpedCheckerCoordinate].occupied
+                        let jumpedCheckerCoordinate = Navigator.coordinate(with: move),
+                        let _ = board[jumpedCheckerCoordinate].occupied
                         else { return false }
-                    
-                    board[coordinate].highlightStatus = .occupiableByJump
-                    board = boardWithAvailableMoves(for: coordinate, isKing: isKing, board: board, side: side, movementType: .jump)
-                } else {
-                    board[coordinate].highlightStatus = .occupiable
+                    path = boardWithAvailableMoves(for: coordinate, isKing: isKing, board: board, side: side, movementType: .jump, path: path)
                 }
                 
+                let move = Move(startingCoordinate: coordinate, direction: direction, movementType: movementType)
+                path.add(move: move)
                 return true
             }
         }
-        return board
+        return path
     }
     
     public static func boardWithPlayableCheckers(for player: Player, with board: Board) -> Board {
@@ -108,7 +157,8 @@ extension Navigator {
     public static func jumpedCheckers(for starting: Coordinate, to ending: Coordinate, on board: Board, checkers: [Checker] = []) -> [Checker] {
         var checkers = checkers
         let moveDirection = direction(from: starting, to: ending)
-        guard let moveCoordinate = coordinate(from: starting, for: moveDirection, with: .normal) else { return checkers }
+        let move = Move(startingCoordinate: starting, direction: moveDirection, movementType: .normal)
+        guard let moveCoordinate = coordinate(with: move) else { return checkers }
         guard let checker = board[moveCoordinate].occupied else {
             if starting == ending {
                 return checkers
@@ -125,10 +175,10 @@ extension Navigator {
 // MARK: - Implementation
 extension Navigator {
     
-    private static func coordinate(from start: Coordinate, for direction: Direction, with movementType: MovementType) -> Coordinate? {
-        let location = Navigator.location(for: direction, movementType: movementType)
-        let horizontalMove = location.x(start.right, location.movementType.rawValue)
-        let verticalMove = location.y(start.down, location.movementType.rawValue)
+    static func coordinate(with move: Move) -> Coordinate? {
+        let location = Navigator.location(for: move.direction, movementType: move.movementType)
+        let horizontalMove = location.x(move.startingCoordinate.right, location.movementType.rawValue)
+        let verticalMove = location.y(move.startingCoordinate.down, location.movementType.rawValue)
         guard
             horizontalMove <= upperBounds,
             horizontalMove >= lowerBounds,
@@ -167,7 +217,13 @@ extension Navigator {
             action: (Coordinate, MovementType) -> Bool
         ) -> Bool {
         
-        guard let coordinate = Navigator.coordinate(from: selectedCoordinate, for: direction, with: movementType) else { return false }
+        // Get new coordinate based on direction and movement type
+        let move = Move(startingCoordinate: selectedCoordinate, direction: direction, movementType: movementType)
+        guard let coordinate = Navigator.coordinate(with: move) else { return false }
+        
+        // If new location is free, execute action
+        // otherwise if occupied by opposing player and not a jump,
+        // recurse with jump movement type
         if board[coordinate].occupied == nil {
             return action(coordinate, movementType)
         } else if board[coordinate].occupied?.side != side && movementType == .normal {
