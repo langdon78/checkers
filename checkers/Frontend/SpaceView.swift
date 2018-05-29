@@ -23,14 +23,14 @@ class SpaceView: UIButton {
         super.init(frame: CGRect(x: space.coordinate.right * 40, y: space.coordinate.down * 40, width: 40, height: 40))
 
         
-        if space.moveable || space.highlightStatus == .occupiable || space.highlightStatus == .selected {
+        if space.moveable || space.highlightStatus == .occupiable || space.highlightStatus == .selected || space.highlightStatus == .occupiableByJump {
             label.text = coordinate.description
             self.layer.borderColor = UIColor.white.cgColor
             self.layer.borderWidth = 1
             if space.highlightStatus == .selected {
                 self.layer.borderColor = UIColor.green.cgColor
                 self.layer.borderWidth = 1
-            } else if space.highlightStatus == .occupiable {
+            } else if space.highlightStatus == .occupiableByJump {
                 self.layer.borderColor = UIColor.blue.cgColor
                 self.layer.borderWidth = 1
             } else {

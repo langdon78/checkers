@@ -178,9 +178,6 @@
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <variation key="default">
                             <mask key="constraints">
-                                <exclude reference="aY8-Lr-FDL"/>
-                                <exclude reference="tW4-XN-SJh"/>
-                                <exclude reference="y5x-sb-WL5"/>
                                 <exclude reference="4fk-li-RZA"/>
                                 <exclude reference="Hgo-sW-glt"/>
                                 <exclude reference="MWs-pM-ptE"/>
@@ -189,6 +186,9 @@
                                 <exclude reference="oIY-0W-H3r"/>
                                 <exclude reference="vKi-9L-Jws"/>
                                 <exclude reference="xSu-o9-NcO"/>
+                                <exclude reference="aY8-Lr-FDL"/>
+                                <exclude reference="tW4-XN-SJh"/>
+                                <exclude reference="y5x-sb-WL5"/>
                                 <exclude reference="Bhr-PS-nPz"/>
                                 <exclude reference="QwH-Id-cKn"/>
                                 <exclude reference="Sng-9w-qLS"/>
@@ -224,10 +224,10 @@
                                 <include reference="7hc-Hy-5rq"/>
                             </mask>
                             <mask key="constraints">
-                                <include reference="aY8-Lr-FDL"/>
-                                <include reference="tW4-XN-SJh"/>
                                 <include reference="4fk-li-RZA"/>
                                 <include reference="g40-7U-03O"/>
+                                <include reference="aY8-Lr-FDL"/>
+                                <include reference="tW4-XN-SJh"/>
                                 <include reference="QwH-Id-cKn"/>
                                 <include reference="T00-IP-yF0"/>
                                 <include reference="MoZ-da-N3y"/>
@@ -248,13 +248,13 @@
                         </variation>
                         <variation key="heightClass=regular">
                             <mask key="constraints">
-                                <include reference="y5x-sb-WL5"/>
                                 <include reference="Hgo-sW-glt"/>
                                 <include reference="MWs-pM-ptE"/>
                                 <include reference="XsE-ni-cPS"/>
                                 <include reference="oIY-0W-H3r"/>
                                 <include reference="vKi-9L-Jws"/>
                                 <include reference="xSu-o9-NcO"/>
+                                <include reference="y5x-sb-WL5"/>
                                 <include reference="Bhr-PS-nPz"/>
                                 <include reference="Sng-9w-qLS"/>
                                 <include reference="5ZI-6V-yJN"/>
@@ -277,6 +277,8 @@
                     <connections>
                         <outlet property="boardView" destination="7hc-Hy-5rq" id="rsO-tV-2Nf"/>
                         <outlet property="bottomCheckers" destination="Jtk-v8-vfk" id="vN2-f5-mnF"/>
+                        <outlet property="player1Label" destination="eFb-y6-YCb" id="Xp0-Nf-MPV"/>
+                        <outlet property="player2Label" destination="MZ5-Fw-1dg" id="jHm-g3-9CI"/>
                         <outlet property="topCheckers" destination="k6Z-kK-gpc" id="5b3-cd-gRD"/>
                     </connections>
                 </viewController>

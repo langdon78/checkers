@@ -49,7 +49,6 @@ struct Space: Equatable {
     var occupied: Checker?
     var highlightStatus: SpaceHighlightStatus = .none
     var coordinate: Coordinate
-    var jumped: Checker?
     
     var moveable: Bool {
         get {
@@ -89,6 +88,8 @@ struct Board {
         }
     }
     
+    var jumpableCheckers: [Coordinate: [Checker]] = [:]
+    
     static var length = 8
     static let upperBounds = 7
     static let lowerBounds = 0
@@ -98,7 +99,13 @@ struct Board {
     var occupiable: [Space] {
         return spaces
             .flatMap { $0 }
-            .filter { $0.highlightStatus == .occupiable }
+            .filter { $0.highlightStatus == .occupiable || $0.highlightStatus == .occupiableByJump }
+    }
+    
+    var occupiableByJump: [Space] {
+        return spaces
+            .flatMap { $0 }
+            .filter { $0.highlightStatus == .occupiableByJump }
     }
     
     var moveable: [Space] {

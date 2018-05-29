@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Coordinate: Equatable, CustomStringConvertible {
+public struct Coordinate: Equatable, CustomStringConvertible, Hashable {
     
     public var right: Int
     public var down: Int
@@ -68,12 +68,18 @@ extension Navigator {
         
         directions.forEach { direction in
             evaluateSpace(for: selectedCoordinate, on: board, with: direction, movementType: movementType, side: side) { (coordinate, movementType) in
-                // Retrieve jumped checker and store in landed space
                 if movementType == .jump {
-                    let jumpedCheckerCoordinate = Navigator.coordinate(from: selectedCoordinate, for: direction, with: .normal)
-                    board[coordinate].jumped = board[jumpedCheckerCoordinate].occupied
+                    guard
+                        let jumpedCheckerCoordinate = Navigator.coordinate(from: selectedCoordinate, for: direction, with: .normal),
+                        let jumpedChecker = board[jumpedCheckerCoordinate].occupied
+                        else { return false }
+                    
+                    board[coordinate].highlightStatus = .occupiableByJump
+                    board = boardWithAvailableMoves(for: coordinate, isKing: isKing, board: board, side: side, movementType: .jump)
+                } else {
+                    board[coordinate].highlightStatus = .occupiable
                 }
-                board[coordinate].highlightStatus = .occupiable
+                
                 return true
             }
         }
@@ -95,18 +101,40 @@ extension Navigator {
         return board
     }
     
+    public static func movementType(from starting: Coordinate, to ending: Coordinate) -> MovementType {
+         return MovementType(rawValue: abs(starting.right - ending.right)) ?? .jump
+    }
+    
+    public static func jumpedCheckers(for starting: Coordinate, to ending: Coordinate, on board: Board, checkers: [Checker] = []) -> [Checker] {
+        var checkers = checkers
+        let moveDirection = direction(from: starting, to: ending)
+        guard let moveCoordinate = coordinate(from: starting, for: moveDirection, with: .normal) else { return checkers }
+        guard let checker = board[moveCoordinate].occupied else {
+            if starting == ending {
+                return checkers
+            } else {
+                return jumpedCheckers(for: moveCoordinate, to: ending, on: board, checkers: checkers)
+            }
+        }
+        checkers.append(checker)
+        return checkers
+    }
+    
 }
 
 // MARK: - Implementation
 extension Navigator {
     
-    private static func coordinate(from start: Coordinate, for direction: Direction, with movementType: MovementType) -> Coordinate {
+    private static func coordinate(from start: Coordinate, for direction: Direction, with movementType: MovementType) -> Coordinate? {
         let location = Navigator.location(for: direction, movementType: movementType)
         let horizontalMove = location.x(start.right, location.movementType.rawValue)
         let verticalMove = location.y(start.down, location.movementType.rawValue)
-        guard horizontalMove <= upperBounds, horizontalMove >= lowerBounds, verticalMove <= upperBounds, verticalMove >= lowerBounds else {
-            return start
-        }
+        guard
+            horizontalMove <= upperBounds,
+            horizontalMove >= lowerBounds,
+            verticalMove <= upperBounds,
+            verticalMove >= lowerBounds
+            else { return nil }
         return Coordinate(right: horizontalMove, down: verticalMove)
     }
     
@@ -119,6 +147,17 @@ extension Navigator {
         }
     }
     
+    private static func direction(from starting: Coordinate, to ending: Coordinate) -> Direction {
+        let down = starting.down > ending.down
+        let right = starting.right > ending.right
+        switch (down, right) {
+        case (true, true): return .upperLeft
+        case (true, false): return .upperRight
+        case (false, true): return .lowerLeft
+        case (false, false): return .lowerRight
+        }
+    }
+    
     @discardableResult private static func evaluateSpace(
             for selectedCoordinate: Coordinate,
             on board: Board,
@@ -128,7 +167,7 @@ extension Navigator {
             action: (Coordinate, MovementType) -> Bool
         ) -> Bool {
         
-        let coordinate = Navigator.coordinate(from: selectedCoordinate, for: direction, with: movementType)
+        guard let coordinate = Navigator.coordinate(from: selectedCoordinate, for: direction, with: movementType) else { return false }
         if board[coordinate].occupied == nil {
             return action(coordinate, movementType)
         } else if board[coordinate].occupied?.side != side && movementType == .normal {

@@ -93,22 +93,27 @@ class Game {
                     let lastSelected = board.selected?.coordinate,
                     let checker = board[lastSelected].occupied
                     else { return }
-                var message = "\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)"
+                print("\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)")
                 board.move(checker: checker, from: lastSelected, to: coordinate)
-                if let jumpedChecker = board[coordinate].jumped {
-                    board[jumpedChecker.currentCoordinate].occupied = nil
-                    if currentTurn.player.side == playerTop.side {
-                        playerTop.captured.append(jumpedChecker)
-                    } else {
-                        playerBottom.captured.append(jumpedChecker)
+                if board[coordinate].highlightStatus == .occupiableByJump {
+                    let jumpableCheckers = Navigator.jumpedCheckers(for: lastSelected, to: coordinate, on: board)
+                    jumpableCheckers.forEach { jumpedChecker in
+                        board[jumpedChecker.currentCoordinate].occupied = nil
+                        if currentTurn.player.side == playerTop.side {
+                            playerTop.captured.append(jumpedChecker)
+                        } else {
+                            playerBottom.captured.append(jumpedChecker)
+                        }
+                        board.selectSpace(for: coordinate)
+                        print("\(currentTurn.player.name) jumped checker at \(jumpedChecker.currentCoordinate.description)")
                     }
-                    board[coordinate].jumped = nil
-                    message = "\(currentTurn.player.name) jumped checker at \(jumpedChecker.currentCoordinate.description)"
                 }
-                clearHighlights()
-                print(message)
+
                 currentTurn.playerMoves.append(board)
-                takeTurn(action: .end)
+                if board.occupiableByJump.isEmpty {
+                    clearHighlights()
+                    takeTurn(action: .end)
+                }
             }
         case .end:
             board.toggleAllMoveable()

@@ -4,7 +4,9 @@ class ViewController: UIViewController {
     
     @IBOutlet weak var topCheckers: UICollectionView!
     @IBOutlet weak var bottomCheckers: UICollectionView!
-
+    @IBOutlet weak var player1Label: UILabel!
+    @IBOutlet weak var player2Label: UILabel!
+    
     var game: Game! {
         didSet {
             refresh(board: game.board)
@@ -22,6 +24,8 @@ class ViewController: UIViewController {
         let player2 = Player(name: "Wendy", side: .bottom)
         game = Game(playerTop: player1, playerBottom: player2, firstPlayer: player2)
         game.delegate = self
+        player1Label.text = player1.name
+        player2Label.text = player2.name
     }
     
     func refresh(board: Board) {
@@ -51,11 +55,12 @@ class ViewController: UIViewController {
     }
     
     @objc func selectSpace(_ spaceView: SpaceView) {
-        if spaceView.space.highlightStatus == .occupiable {
+        switch spaceView.space.highlightStatus {
+        case .occupiable,.occupiableByJump:
             game.takeTurn(action: .start(.move(spaceView.coordinate)))
-        } else if spaceView.space.highlightStatus == .selected {
+        case .selected:
             game.takeTurn(action: .start(.deselect(spaceView.coordinate)))
-        } else {
+        default:
             game.takeTurn(action: .start(.select(spaceView.coordinate)))
         }
     }
