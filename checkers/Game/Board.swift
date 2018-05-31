@@ -16,7 +16,7 @@ extension String {
     
 }
 
-struct Checker: Equatable {
+public struct Checker: Equatable {
     
     var currentCoordinate: Coordinate {
         didSet {
@@ -49,6 +49,10 @@ struct Space: Equatable {
     var occupied: Checker?
     var highlightStatus: SpaceHighlightStatus = .none
     var coordinate: Coordinate
+    
+    var isOpen: Bool {
+        return occupied == nil
+    }
     
     var moveable: Bool {
         get {
@@ -256,17 +260,20 @@ extension Board {
     }
     
     public mutating func availableMoves(for checker: Checker) -> [Move] {
-        let moves = Navigator.boardWithAvailableMoves(for: checker.currentCoordinate, isKing: checker.isKing, board: self, side: checker.side, movementType: .normal)
+        let moves = Navigator.availableMoves(with: checker, for: checker.currentCoordinate, board: self)
         for move in moves {
             if let coordinate = move.endingCoordinate {
-                self[coordinate].highlightStatus = move.movementType == .jump ? .occupiableByJump : .occupiable
+                self[coordinate].highlightStatus = move.movementType == .normal ? .occupiable : .occupiableByJump
             }
         }
         return moves
     }
     
     public mutating func playableCheckers(for player: Player) {
-        self = Navigator.boardWithPlayableCheckers(for: player, with: self)
+        let highlightedCoordinates = Navigator.playableCheckers(for: player, with: self)
+        highlightedCoordinates.forEach { coordinate in
+            self[coordinate].moveable.toggle()
+        }
     }
     
 }

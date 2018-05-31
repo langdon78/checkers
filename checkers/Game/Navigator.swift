@@ -38,10 +38,19 @@ public enum Direction: Equatable {
     
 }
 
-public enum MovementType: Int, Equatable {
+public enum MovementType: Equatable {
     
-    case normal = 1
-    case jump
+    case normal
+    case jump(Checker)
+    
+    var rawValue: Int {
+        switch self {
+        case .normal:
+            return 1
+        default:
+            return 2
+        }
+    }
 
 }
 
@@ -107,54 +116,25 @@ struct Path {
 // MARK: - Public API
 extension Navigator {
     
-    public static func boardWithAvailableMoves(
-            for selectedCoordinate: Coordinate,
-            isKing: Bool,
-            board: Board,
-            side: Side,
-            movementType: MovementType,
-            moves: [Move] = []
-        ) -> [Move] {
-        
-        var moves = moves
-        let directions = availableDirections(for: side, isKing: isKing)
-        
-        directions.forEach { direction in
-            evaluateSpace(for: selectedCoordinate, on: board, with: direction, movementType: movementType, side: side) { (coordinate, movementType) in
-                if movementType == .jump {
-                    let move = Move(startingCoordinate: selectedCoordinate, direction: direction, movementType: .normal)
-                    guard
-                        let jumpedCheckerCoordinate = Navigator.coordinate(with: move),
-                        let _ = board[jumpedCheckerCoordinate].occupied
-                        else { return false }
-                    moves = boardWithAvailableMoves(for: coordinate, isKing: isKing, board: board, side: side, movementType: .jump, moves: moves)
-                }
-                
-                let move = Move(startingCoordinate: selectedCoordinate, direction: direction, movementType: movementType)
-                moves.append(move)
-                return true
+    public static func availableMoves(with checker: Checker, for selectedCoordinate: Coordinate, board: Board, moves: [Move] = []) -> [Move] {
+        var moves = moves.isEmpty ? possibleMoves(with: checker, from: selectedCoordinate, on: board) : moves
+        for move in moves {
+            if move.movementType != .normal, let endingCoordinate = move.endingCoordinate {
+                let newMoves = possibleMoves(with: checker, from: endingCoordinate, on: board)
+                moves.append(contentsOf: availableMoves(with: checker, for: endingCoordinate, board: board, moves: newMoves))
             }
         }
         return moves
+
     }
     
-    public static func boardWithPlayableCheckers(for player: Player, with board: Board) -> Board {
-        var board = board
+    public static func playableCheckers(for player: Player, with board: Board) -> [Coordinate] {
         let playerCheckers = board.checkers(for: player.side)
-        for checker in playerCheckers {
-            for direction in availableDirections(for: checker.side, isKing: checker.isKing) {
-                let toggled = evaluateSpace(for: checker.currentCoordinate, on: board, with: direction, movementType: .normal, side: checker.side) { (coordinate, _) in
-                    board[checker.currentCoordinate].moveable.toggle()
-                    return true
-                }
-                if toggled { break }
-            }
+        return playerCheckers.compactMap { checker in
+            let moves = possibleMoves(with: checker, from: checker.currentCoordinate, on: board)
+            guard !moves.isEmpty else { return nil }
+            return checker.currentCoordinate
         }
-        return board
-    }
-    
-    public static func movementType(from starting: Coordinate, to ending: Coordinate) -> MovementType {
-         return MovementType(rawValue: abs(starting.right - ending.right)) ?? .jump
     }
     
     public static func jumpedCheckers(for starting: Coordinate, to ending: Coordinate, on board: Board, checkers: [Checker] = []) -> [Checker] {
@@ -171,6 +151,19 @@ extension Navigator {
         }
         checkers.append(checker)
         return checkers
+    }
+    
+    public static func findPaths(for moves: [Move]) -> [Path] {
+        var result: [Path] = []
+        for move in moves {
+            result = result.map { $0.add(move) }
+            // If coordinate not associated with existing path, make new path
+            let flattened = result.flatMap { $0.moves }
+            if !flattened.contains(move) {
+                result.append(Path(move: move))
+            }
+        }
+        return result
     }
     
 }
@@ -211,28 +204,23 @@ extension Navigator {
         }
     }
     
-    @discardableResult private static func evaluateSpace(
-            for selectedCoordinate: Coordinate,
-            on board: Board,
-            with direction: Direction,
-            movementType: MovementType,
-            side: Side,
-            action: (Coordinate, MovementType) -> Bool
-        ) -> Bool {
-        
-        // Get new coordinate based on direction and movement type
-        let move = Move(startingCoordinate: selectedCoordinate, direction: direction, movementType: movementType)
-        guard let coordinate = Navigator.coordinate(with: move) else { return false }
-        
-        // If new location is free, execute action
-        // otherwise if occupied by opposing player and not a jump,
-        // recurse with jump movement type
-        if board[coordinate].occupied == nil {
-            return action(coordinate, movementType)
-        } else if board[coordinate].occupied?.side != side && movementType == .normal {
-            return evaluateSpace(for: selectedCoordinate, on: board, with: direction, movementType: .jump, side: side, action: action)
+    private static func possibleMoves(with playerChecker: Checker, from coordinate: Coordinate, on board: Board) -> [Move] {
+        return availableDirections(for: playerChecker.side, isKing: playerChecker.isKing).compactMap { direction in
+            let move = Move(startingCoordinate: coordinate, direction: direction, movementType: .normal)
+            if let spacePlus1 = Navigator.coordinate(with: move) {
+                if let jumpableChecker = board[spacePlus1].occupied,
+                jumpableChecker.side != playerChecker.side {
+                    let nextMove = Move(startingCoordinate: spacePlus1, direction: direction, movementType: .normal)
+                    if let spacePlus2 = Navigator.coordinate(with: nextMove),
+                        board[spacePlus2].isOpen {
+                        return Move(startingCoordinate: coordinate, direction: direction, movementType: .jump(jumpableChecker))
+                    }
+                } else if board[spacePlus1].isOpen && !board[coordinate].isOpen {
+                    return move
+                }
+            }
+            return nil
         }
-        return false
     }
     
     private static func availableDirections(for side: Side, isKing: Bool) -> [Direction] {
@@ -241,19 +229,6 @@ extension Navigator {
         case (false, .bottom): return [.upperLeft, .upperRight]
         default: return [.lowerLeft, .upperLeft, .lowerRight, .upperRight]
         }
-    }
-    
-    public static func findPaths(for moves: [Move]) -> [Path] {
-        var result: [Path] = []
-        for move in moves {
-            result = result.map { $0.add(move) }
-            // If coordinate not associated with existing path, make new path
-            let flattened = result.flatMap { $0.moves }
-            if !flattened.contains(move) {
-                result.append(Path(move: move))
-            }
-        }
-        return result
     }
     
 }
