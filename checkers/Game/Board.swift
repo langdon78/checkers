@@ -255,14 +255,14 @@ extension Board {
             .forEach { self[$0.coordinate].highlightStatus = .none }
     }
     
-    public mutating func availableMoves(for checker: Checker) -> Path {
-        let paths = Navigator.boardWithAvailableMoves(for: checker.currentCoordinate, isKing: checker.isKing, board: self, side: checker.side, movementType: .normal, path: Path(paths: [:]))
-        for path in paths.paths {
-            for move in path.value {
-                self[move.startingCoordinate].highlightStatus = move.movementType == .jump ? .occupiableByJump : .occupiable
+    public mutating func availableMoves(for checker: Checker) -> [Move] {
+        let moves = Navigator.boardWithAvailableMoves(for: checker.currentCoordinate, isKing: checker.isKing, board: self, side: checker.side, movementType: .normal)
+        for move in moves {
+            if let coordinate = move.endingCoordinate {
+                self[coordinate].highlightStatus = move.movementType == .jump ? .occupiableByJump : .occupiable
             }
         }
-        return paths
+        return moves
     }
     
     public mutating func playableCheckers(for player: Player) {

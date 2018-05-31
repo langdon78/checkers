@@ -86,16 +86,17 @@ class Game {
                 clearHighlights()
                 board.selectSpace(for: coordinate)
                 currentTurn.availableMoves = board.availableMoves(for: checker)
-                print(currentTurn.availableMoves)
             case .deselect:
                 clearHighlights()
                 currentTurn.availableMoves = nil
             case .move(let coordinate):
-                let moves = currentTurn.availableMoves?.selectPath(with: coordinate).reversed()
+                guard let moves = currentTurn.availableMoves else { return }
+                let paths = Navigator.findPaths(for: moves)
+                guard let path = paths.first(where: { $0.match(with: coordinate) }) else { return }
                 
-                for move in moves! {
-                    let coordinate = move.startingCoordinate
+                for move in path.moves {
                     guard
+                        let coordinate = move.endingCoordinate,
                         let lastSelected = board.selected?.coordinate,
                         let checker = board[lastSelected].occupied
                         else { return }
@@ -145,7 +146,7 @@ struct Turn {
     
     var playerMoves: [Board] = []
     var player: Player
-    var availableMoves: Path?
+    var availableMoves: [Move]?
     
     init(player: Player) {
         self.player = player

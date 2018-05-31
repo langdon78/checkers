@@ -1,5 +1,13 @@
 import Foundation
 
+extension Array {
+    mutating func prepend(_ element: Element) {
+        var reversed = Array(self.reversed())
+        reversed.append(element)
+        self = reversed.reversed()
+    }
+}
+
 public struct Coordinate: Equatable, CustomStringConvertible, Hashable {
     
     public var right: Int
@@ -12,7 +20,7 @@ public struct Coordinate: Equatable, CustomStringConvertible, Hashable {
 
 public typealias AxialDirection = (Int,Int) -> Int
 
-public enum Direction {
+public enum Direction: Equatable {
     
     case upperRight
     case upperLeft
@@ -30,7 +38,7 @@ public enum Direction {
     
 }
 
-public enum MovementType: Int {
+public enum MovementType: Int, Equatable {
     
     case normal = 1
     case jump
@@ -52,7 +60,7 @@ struct Navigator {
     
 }
 
-struct Move {
+struct Move: Equatable {
     var startingCoordinate: Coordinate
     var direction: Direction
     var movementType: MovementType
@@ -62,42 +70,37 @@ struct Move {
 }
 
 struct Path {
-    var paths: [Int: [Move]]
-    var nextIndex: Int {
-        guard let highestIndex = paths.sorted(by: { $0.key > $1.key }).first else { return 0 }
-        return highestIndex.key + 1
+    private var last: Coordinate? {
+        return moves.last?.endingCoordinate
+    }
+    var moves: [Move]
+    
+    init(moves: [Move]) {
+        self.moves = moves
     }
     
-    func continuedPaths(coordinate: Coordinate?) -> [Int] {
-        return paths
-            .filter { path in
-            guard let lastCoordinate = path.value.last?.startingCoordinate else { return false }
-            return coordinate == lastCoordinate
-            }.map {
-                $0.key
-        }
+    init(move: Move) {
+        self.init(moves: [move])
     }
     
-    func selectPath(with coordinate: Coordinate) -> [Move] {
-        guard let path = paths
-            .filter({ $0.value
-                .contains(where: {$0.startingCoordinate == coordinate }) })
-            .first?.value
-            else { return [] }
-        return path
+    func match(with coordinate: Coordinate) -> Bool {
+        return last == coordinate
     }
     
-    mutating func add(move: Move) {
-        let keys = continuedPaths(coordinate: move.endingCoordinate)
-        if keys.isEmpty {
-            paths.updateValue([move], forKey: nextIndex)
-        } else {
-            for key in keys {
-                var moves = paths[key]!
+    mutating func adding(_ move: Move) {
+        moves.forEach { item in
+            if move.startingCoordinate == item.endingCoordinate {
                 moves.append(move)
-                paths.updateValue(moves, forKey: key)
+            } else if move.endingCoordinate == item.startingCoordinate {
+                moves.prepend(move)
             }
         }
+    }
+    
+    func add(_ move: Move) -> Path {
+        var path = self
+        path.adding(move)
+        return path
     }
 }
 
@@ -110,10 +113,10 @@ extension Navigator {
             board: Board,
             side: Side,
             movementType: MovementType,
-            path: Path
-        ) -> Path {
+            moves: [Move] = []
+        ) -> [Move] {
         
-        var path = path
+        var moves = moves
         let directions = availableDirections(for: side, isKing: isKing)
         
         directions.forEach { direction in
@@ -124,15 +127,15 @@ extension Navigator {
                         let jumpedCheckerCoordinate = Navigator.coordinate(with: move),
                         let _ = board[jumpedCheckerCoordinate].occupied
                         else { return false }
-                    path = boardWithAvailableMoves(for: coordinate, isKing: isKing, board: board, side: side, movementType: .jump, path: path)
+                    moves = boardWithAvailableMoves(for: coordinate, isKing: isKing, board: board, side: side, movementType: .jump, moves: moves)
                 }
                 
-                let move = Move(startingCoordinate: coordinate, direction: direction, movementType: movementType)
-                path.add(move: move)
+                let move = Move(startingCoordinate: selectedCoordinate, direction: direction, movementType: movementType)
+                moves.append(move)
                 return true
             }
         }
-        return path
+        return moves
     }
     
     public static func boardWithPlayableCheckers(for player: Player, with board: Board) -> Board {
@@ -238,6 +241,19 @@ extension Navigator {
         case (false, .bottom): return [.upperLeft, .upperRight]
         default: return [.lowerLeft, .upperLeft, .lowerRight, .upperRight]
         }
+    }
+    
+    public static func findPaths(for moves: [Move]) -> [Path] {
+        var result: [Path] = []
+        for move in moves {
+            result = result.map { $0.add(move) }
+            // If coordinate not associated with existing path, make new path
+            let flattened = result.flatMap { $0.moves }
+            if !flattened.contains(move) {
+                result.append(Path(move: move))
+            }
+        }
+        return result
     }
     
 }
