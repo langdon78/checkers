@@ -22,7 +22,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         let player1 = Player(name: "James", side: .top)
         let player2 = Player(name: "Wendy", side: .bottom)
-        game = Game(playerTop: player1, playerBottom: player2, firstPlayer: player2)
+        game = Game(playerOne: player1, playerTwo: player2, firstPlayer: player2)
         game.delegate = self
         player1Label.text = player1.name
         player2Label.text = player2.name
@@ -77,9 +77,9 @@ extension ViewController: GameDelegate {
 extension ViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if collectionView === topCheckers {
-            return game.playerTop.captured.count
+            return game.playerOne.captured.count
         } else {
-            return game.playerBottom.captured.count
+            return game.playerTwo.captured.count
         }
     }
     
@@ -87,9 +87,9 @@ extension ViewController: UICollectionViewDataSource {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath)
         var checker: Checker?
         if collectionView === topCheckers {
-            checker = game.playerTop.captured[indexPath.row]
+            checker = game.playerOne.captured[indexPath.row]
         } else {
-            checker = game.playerBottom.captured[indexPath.row]
+            checker = game.playerTwo.captured[indexPath.row]
         }
         let circlePath = UIBezierPath(arcCenter: CGPoint(x: 25,y: 25), radius: CGFloat(12.5), startAngle: CGFloat(0), endAngle:CGFloat(Double.pi * 2), clockwise: true)
         let shapeLayer = CAShapeLayer()

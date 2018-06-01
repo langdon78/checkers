@@ -82,6 +82,9 @@ struct Path {
     private var last: Coordinate? {
         return moves.last?.endingCoordinate
     }
+    var head: [Move] {
+        return Array(moves.prefix(through: moves.count-2))
+    }
     var moves: [Move]
     
     init(moves: [Move]) {
@@ -137,22 +140,6 @@ extension Navigator {
         }
     }
     
-    public static func jumpedCheckers(for starting: Coordinate, to ending: Coordinate, on board: Board, checkers: [Checker] = []) -> [Checker] {
-        var checkers = checkers
-        let moveDirection = direction(from: starting, to: ending)
-        let move = Move(startingCoordinate: starting, direction: moveDirection, movementType: .normal)
-        guard let moveCoordinate = coordinate(with: move) else { return checkers }
-        guard let checker = board[moveCoordinate].occupied else {
-            if starting == ending {
-                return checkers
-            } else {
-                return jumpedCheckers(for: moveCoordinate, to: ending, on: board, checkers: checkers)
-            }
-        }
-        checkers.append(checker)
-        return checkers
-    }
-    
     public static func findPaths(for moves: [Move]) -> [Path] {
         var result: [Path] = []
         for move in moves {
@@ -162,6 +149,12 @@ extension Navigator {
             if !flattened.contains(move) {
                 result.append(Path(move: move))
             }
+        }
+        // Create path points for single jumps when multiple jumps are allowed
+        result
+            .flatMap { $0.head }
+            .forEach {
+                result.append(Path(move: $0))
         }
         return result
     }

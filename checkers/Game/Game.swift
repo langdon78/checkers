@@ -47,13 +47,13 @@ class Game {
     var timeline: [Turn] = []
     var currentTurn: Turn
     
-    var playerTop: Player {
+    var playerOne: Player {
         didSet {
             delegate?.didUpdate(board: board)
         }
     }
     
-    var playerBottom: Player {
+    var playerTwo: Player {
         didSet {
             delegate?.didUpdate(board: board)
         }
@@ -67,13 +67,13 @@ class Game {
     
     weak var delegate: GameDelegate?
     
-    init(playerTop: Player, playerBottom: Player, board: Board = Board(), firstPlayer: Player) {
-        self.playerTop = playerTop
-        self.playerBottom = playerBottom
+    init(playerOne: Player, playerTwo: Player, board: Board = Board(), firstPlayer: Player) {
+        self.playerOne = playerOne
+        self.playerTwo = playerTwo
         self.currentTurn = Turn(player: firstPlayer)
         self.board = board
-        self.playerTop.checkers = board.top
-        self.playerBottom.checkers = board.bottom
+        self.playerOne.checkers = board.top
+        self.playerTwo.checkers = board.bottom
         self.board.playableCheckers(for: currentTurn.player)
     }
     
@@ -103,19 +103,16 @@ class Game {
                     print("\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)")
                     
                     board.move(checker: checker, from: lastSelected, to: coordinate)
-                    
-                    if board[coordinate].highlightStatus == .occupiableByJump {
-                        let jumpableCheckers = Navigator.jumpedCheckers(for: lastSelected, to: coordinate, on: board)
-                        jumpableCheckers.forEach { jumpedChecker in
-                            board[jumpedChecker.currentCoordinate].occupied = nil
-                            if currentTurn.player.side == playerTop.side {
-                                playerTop.captured.append(jumpedChecker)
-                            } else {
-                                playerBottom.captured.append(jumpedChecker)
-                            }
-                            board.selectSpace(for: coordinate)
-                            print("\(currentTurn.player.name) jumped checker at \(jumpedChecker.currentCoordinate.description)")
+                    if case .jump(let checker) = move.movementType {
+                        if currentTurn.player.side == playerOne.side {
+                            playerOne.captured.append(checker)
+                        } else {
+                            playerTwo.captured.append(checker)
                         }
+                        
+                        board[checker.currentCoordinate].occupied = nil
+                        board.selectSpace(for: coordinate)
+                        print("\(currentTurn.player.name) jumped checker at \(checker.currentCoordinate.description)")
                     }
                     
                     currentTurn.playerMoves.append(board)
@@ -128,7 +125,7 @@ class Game {
             }
         case .end:
             board.toggleAllMoveable()
-            let nextPlayer = currentTurn.player.side == playerBottom.side ? playerTop : playerBottom
+            let nextPlayer = currentTurn.player.side == playerTwo.side ? playerOne : playerTwo
             timeline.append(currentTurn)
             currentTurn = Turn(player: nextPlayer)
             board.playableCheckers(for: currentTurn.player)
