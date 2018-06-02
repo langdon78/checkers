@@ -7,7 +7,7 @@ class ViewController: UIViewController {
     @IBOutlet weak var player1Label: UILabel!
     @IBOutlet weak var player2Label: UILabel!
     
-    var game: Game! {
+    var game: GameManager! {
         didSet {
             refresh(board: game.board)
         }
@@ -22,7 +22,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         let player1 = Player(name: "James", side: .top)
         let player2 = Player(name: "Wendy", side: .bottom)
-        game = Game(playerOne: player1, playerTwo: player2, firstPlayer: player2)
+        game = GameManager(playerOne: player1, playerTwo: player2, firstPlayer: player2)
         game.delegate = self
         player1Label.text = player1.name
         player2Label.text = player2.name
@@ -44,9 +44,7 @@ class ViewController: UIViewController {
         for row in board.spaces {
             var posX = 0
             for space in row {
-                let spaceView = SpaceView(space: space)
-                spaceView.backgroundColor = space.playable ? .black : .red
-                spaceView.addTarget(self, action: #selector(selectSpace), for: .touchUpInside)
+                let spaceView = self.spaceView(for: space)
                 boardView.addSubview(spaceView)
                 posX += 1
             }
@@ -54,23 +52,47 @@ class ViewController: UIViewController {
         }
     }
     
+    private func spaceView(for space: Space) -> SpaceView {
+        let spaceView = SpaceView(space: space)
+        spaceView.backgroundColor = space.playable ? .black : .red
+        spaceView.addTarget(self, action: #selector(selectSpace), for: .touchUpInside)
+        spaceView.tag = space.coordinate.hashValue
+        return spaceView
+    }
+    
     @objc func selectSpace(_ spaceView: SpaceView) {
         switch spaceView.space.highlightStatus {
         case .occupiable,.occupiableByJump:
-            game.takeTurn(action: .start(.move(spaceView.coordinate)))
+            game.takeTurn(action: .move(spaceView.coordinate))
         case .selected:
-            game.takeTurn(action: .start(.deselect(spaceView.coordinate)))
+            game.takeTurn(action: .deselect(spaceView.coordinate))
         default:
-            game.takeTurn(action: .start(.select(spaceView.coordinate)))
+            game.takeTurn(action: .select(spaceView.coordinate))
         }
     }
 }
 
 // MARK: GameDelegate methods
-extension ViewController: GameDelegate {
-    func didUpdate(board: Board) {
+extension ViewController: GameManagerDelegate {
+    
+    func board(updated board: Board) {
         refresh(board: board)
     }
+    
+    func board(updatedAt spaces: [Space]) {
+        for space in spaces {
+            let spaceView = self.spaceView(for: space)
+            if let oldView = boardView.subviews.first(where: {$0.tag == space.coordinate.hashValue}) {
+                boardView.insertSubview(spaceView, aboveSubview: oldView)
+                oldView.removeFromSuperview()
+            }
+        }
+    }
+    
+    func board(updatedWith message: String) {
+        print(message)
+    }
+
 }
 
 // MARK: CollectionView data source

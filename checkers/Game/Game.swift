@@ -1,23 +1,19 @@
 import Foundation
 
-protocol GameDelegate: class {
+protocol GameManagerDelegate: class {
     
-    func didUpdate(board: Board)
+    func board(updated board: Board)
+    func board(updatedAt spaces: [Space])
+    func board(updatedWith message: String)
 
 }
 
 enum TurnAction {
     
-    case start(MoveAction)
-    case end
-
-}
-
-enum MoveAction {
-    
     case select(Coordinate)
     case deselect(Coordinate)
     case move(Coordinate)
+    case end
 
 }
 
@@ -42,30 +38,32 @@ struct Player: Equatable {
     
 }
 
-class Game {
+class GameManager {
     
     var timeline: [Turn] = []
     var currentTurn: Turn
     
     var playerOne: Player {
         didSet {
-            delegate?.didUpdate(board: board)
+            delegate?.board(updated: board)
         }
     }
     
     var playerTwo: Player {
         didSet {
-            delegate?.didUpdate(board: board)
+            delegate?.board(updated: board)
         }
     }
     
     var board: Board {
         didSet {
-            delegate?.didUpdate(board: board)
+            let spaces = oldValue.spaceDiff(for: board)
+            delegate?.board(updatedAt: spaces)
+//            delegate?.board(updated: board)
         }
     }
     
-    weak var delegate: GameDelegate?
+    weak var delegate: GameManagerDelegate?
     
     init(playerOne: Player, playerTwo: Player, board: Board = Board(), firstPlayer: Player) {
         self.playerOne = playerOne
@@ -79,49 +77,48 @@ class Game {
     
     func takeTurn(action: TurnAction) {
         switch action {
-        case .start(let moveAction):
-            switch moveAction {
-            case .select(let coordinate):
-                guard let checker = board[coordinate].occupied, checker.side == currentTurn.player.side else { return }
-                clearHighlights()
-                board.selectSpace(for: coordinate)
-                currentTurn.availableMoves = board.availableMoves(for: checker)
-            case .deselect:
-                clearHighlights()
-                currentTurn.availableMoves = nil
-            case .move(let coordinate):
-                guard let moves = currentTurn.availableMoves else { return }
-                let paths = Navigator.findPaths(for: moves)
-                guard let path = paths.first(where: { $0.match(with: coordinate) }) else { return }
+        case .select(let coordinate):
+            guard let checker = board[coordinate].occupied, checker.side == currentTurn.player.side else { return }
+            clearHighlights()
+            board.selectSpace(for: coordinate)
+            currentTurn.availableMoves = board.availableMoves(for: checker)
+//            var spaces: [Space] = currentTurn.availableMoves!.compactMap { board[$0.endingCoordinate!] }
+//            spaces.append(board[coordinate])
+//            delegate?.board(updatedAt: spaces)
+        case .deselect:
+            clearHighlights()
+            currentTurn.availableMoves = nil
+        case .move(let coordinate):
+            guard let moves = currentTurn.availableMoves else { return }
+            let paths = Navigator.findPaths(for: moves)
+            guard let path = paths.first(where: { $0.match(with: coordinate) }) else { return }
+            
+            for move in path.moves {
+                guard
+                    let coordinate = move.endingCoordinate,
+                    let lastSelected = board.selected?.coordinate,
+                    let checker = board[lastSelected].occupied
+                    else { return }
+                print("\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)")
                 
-                for move in path.moves {
-                    guard
-                        let coordinate = move.endingCoordinate,
-                        let lastSelected = board.selected?.coordinate,
-                        let checker = board[lastSelected].occupied
-                        else { return }
-                    print("\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)")
-                    
-                    board.move(checker: checker, from: lastSelected, to: coordinate)
-                    if case .jump(let checker) = move.movementType {
-                        if currentTurn.player.side == playerOne.side {
-                            playerOne.captured.append(checker)
-                        } else {
-                            playerTwo.captured.append(checker)
-                        }
-                        
-                        board[checker.currentCoordinate].occupied = nil
-                        board.selectSpace(for: coordinate)
-                        print("\(currentTurn.player.name) jumped checker at \(checker.currentCoordinate.description)")
+                board.move(checker: checker, from: lastSelected, to: coordinate)
+                if case .jump(let checker) = move.movementType {
+                    if currentTurn.player.side == playerOne.side {
+                        playerOne.captured.append(checker)
+                    } else {
+                        playerTwo.captured.append(checker)
                     }
                     
-                    currentTurn.playerMoves.append(board)
-                    if board.occupiableByJump.isEmpty {
-                        clearHighlights()
-                        takeTurn(action: .end)
-                    }
+                    board[checker.currentCoordinate].occupied = nil
+                    board.selectSpace(for: coordinate)
+                    print("\(currentTurn.player.name) jumped checker at \(checker.currentCoordinate.description)")
                 }
-  
+                
+                currentTurn.playerMoves.append(board)
+                if board.occupiableByJump.isEmpty {
+                    clearHighlights()
+                    takeTurn(action: .end)
+                }
             }
         case .end:
             board.toggleAllMoveable()

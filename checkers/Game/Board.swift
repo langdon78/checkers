@@ -1,22 +1,6 @@
 import Foundation
 
-extension Bool {
-    
-    mutating func toggle() {
-        self = !self
-    }
-    
-}
-
-extension String {
-    
-    static var empty: String {
-        return ""
-    }
-    
-}
-
-public struct Checker: Equatable {
+public struct Checker: Equatable, Hashable {
     
     var currentCoordinate: Coordinate {
         didSet {
@@ -43,7 +27,10 @@ enum SpaceHighlightStatus {
     
 }
 
-struct Space: Equatable {
+struct Space: Equatable, Hashable {
+    var hashValue: Int {
+        return coordinate.right.hashValue ^ coordinate.down.hashValue ^ playable.hashValue ^ highlightStatus.hashValue ^ (occupied?.hashValue ?? 1) &* 16777619
+    }
 
     var playable: Bool
     var occupied: Checker?
@@ -274,6 +261,12 @@ extension Board {
         highlightedCoordinates.forEach { coordinate in
             self[coordinate].moveable.toggle()
         }
+    }
+    
+    public func spaceDiff(for board: Board) -> [Space] {
+        let oldSpaces = Set<Space>(self.spaces.flatMap { $0 })
+        let newSpaces = Set<Space>(board.spaces.flatMap { $0 })
+        return Array(newSpaces.subtracting(oldSpaces))
     }
     
 }

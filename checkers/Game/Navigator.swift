@@ -1,13 +1,5 @@
 import Foundation
 
-extension Array {
-    mutating func prepend(_ element: Element) {
-        var reversed = Array(self.reversed())
-        reversed.append(element)
-        self = reversed.reversed()
-    }
-}
-
 public struct Coordinate: Equatable, CustomStringConvertible, Hashable {
     
     public var right: Int
@@ -16,6 +8,7 @@ public struct Coordinate: Equatable, CustomStringConvertible, Hashable {
     public var description: String {
         return "[\(right), \(down)]"
     }
+    
 }
 
 public typealias AxialDirection = (Int,Int) -> Int
@@ -62,23 +55,19 @@ public struct Location {
     
 }
 
-struct Navigator {
-    
-    private static let upperBounds = Board.upperBounds
-    private static let lowerBounds = Board.lowerBounds
-    
-}
-
 struct Move: Equatable {
+    
     var startingCoordinate: Coordinate
     var direction: Direction
     var movementType: MovementType
     var endingCoordinate: Coordinate? {
         return Navigator.coordinate(with: Move(startingCoordinate: startingCoordinate, direction: direction, movementType: movementType))
     }
+    
 }
 
 struct Path {
+    
     private var last: Coordinate? {
         return moves.last?.endingCoordinate
     }
@@ -114,6 +103,14 @@ struct Path {
         path.adding(move)
         return path
     }
+    
+}
+
+struct Navigator {
+    
+    private static let upperBounds = Board.upperBounds
+    private static let lowerBounds = Board.lowerBounds
+    
 }
 
 // MARK: - Public API
@@ -164,7 +161,7 @@ extension Navigator {
 // MARK: - Implementation
 extension Navigator {
     
-    static func coordinate(with move: Move) -> Coordinate? {
+    fileprivate static func coordinate(with move: Move) -> Coordinate? {
         let location = Navigator.location(for: move.direction, movementType: move.movementType)
         let horizontalMove = location.x(move.startingCoordinate.right, location.movementType.rawValue)
         let verticalMove = location.y(move.startingCoordinate.down, location.movementType.rawValue)

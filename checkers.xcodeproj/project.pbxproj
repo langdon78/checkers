@@ -16,6 +16,7 @@
 		BC60231D2066A3AD00C7C936 /* Board.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC60231C2066A3AD00C7C936 /* Board.swift */; };
 		BC6023212066A45400C7C936 /* Navigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6023202066A45400C7C936 /* Navigator.swift */; };
 		BC6023232066A6BD00C7C936 /* SpaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6023222066A6BD00C7C936 /* SpaceView.swift */; };
+		BCB6579820C2B1A900F564E1 /* Swift+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB6579720C2B1A900F564E1 /* Swift+Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		BC60231C2066A3AD00C7C936 /* Board.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Board.swift; sourceTree = "<group>"; };
 		BC6023202066A45400C7C936 /* Navigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigator.swift; sourceTree = "<group>"; };
 		BC6023222066A6BD00C7C936 /* SpaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceView.swift; sourceTree = "<group>"; };
+		BCB6579720C2B1A900F564E1 /* Swift+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Swift+Extensions.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +78,7 @@
 				BC60231A2066A3A100C7C936 /* Game.swift */,
 				BC60231C2066A3AD00C7C936 /* Board.swift */,
 				BC6023202066A45400C7C936 /* Navigator.swift */,
+				BCB6579720C2B1A900F564E1 /* Swift+Extensions.swift */,
 			);
 			path = Game;
 			sourceTree = "<group>";
@@ -173,6 +176,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BC6023232066A6BD00C7C936 /* SpaceView.swift in Sources */,
+				BCB6579820C2B1A900F564E1 /* Swift+Extensions.swift in Sources */,
 				BC6023072066A2E900C7C936 /* ViewController.swift in Sources */,
 				BC60231B2066A3A100C7C936 /* Game.swift in Sources */,
 				BC60231D2066A3AD00C7C936 /* Board.swift in Sources */,
