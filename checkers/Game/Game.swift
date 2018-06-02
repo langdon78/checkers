@@ -2,19 +2,47 @@ import Foundation
 
 protocol GameManagerDelegate: class {
     
+    func gameStarted()
+    func gameOver(winner: Player, loser: Player)
+    
+}
+
+protocol GameManagerBoardDelegate: class {
+    
     func board(updated board: Board)
     func board(updatedAt spaces: [Space])
-    func board(updatedWith message: String)
 
+}
+
+extension GameManagerBoardDelegate {
+    
+    func board(updated board: Board) {}
+    func board(updatedAt spaces: [Space]) {}
+    
+}
+
+protocol GameManagerTurnDelegate: class {
+    
+    func messageLog(_ message: String)
+    func turnAction(_ turnAction: TurnAction)
+    
 }
 
 enum TurnAction {
     
+    case start
     case select(Coordinate)
     case deselect(Coordinate)
     case move(Coordinate)
     case end
 
+}
+
+enum GameAction {
+    
+    case start
+    case end(Player)
+    
 }
 
 enum Side {
@@ -41,50 +69,70 @@ struct Player: Equatable {
 class GameManager {
     
     var timeline: [Turn] = []
-    var currentTurn: Turn
+    var currentTurn: Turn {
+        didSet {
+            if currentTurn.player.captured.count == 12 {
+                gameAction(with: .end(currentTurn.player))
+            }
+        }
+    }
     
     var playerOne: Player {
         didSet {
-            delegate?.board(updated: board)
+            boardDelegate?.board(updated: board)
         }
     }
     
     var playerTwo: Player {
         didSet {
-            delegate?.board(updated: board)
+            boardDelegate?.board(updated: board)
         }
     }
     
     var board: Board {
         didSet {
             let spaces = oldValue.spaceDiff(for: board)
-            delegate?.board(updatedAt: spaces)
+            boardDelegate?.board(updatedAt: spaces)
 //            delegate?.board(updated: board)
         }
     }
     
-    weak var delegate: GameManagerDelegate?
+    weak var boardDelegate: GameManagerBoardDelegate?
+    weak var turnDelegate: GameManagerTurnDelegate?
+    weak var gameDelegate: GameManagerDelegate?
     
     init(playerOne: Player, playerTwo: Player, board: Board = Board(), firstPlayer: Player) {
         self.playerOne = playerOne
         self.playerTwo = playerTwo
-        self.currentTurn = Turn(player: firstPlayer)
         self.board = board
-        self.playerOne.checkers = board.top
-        self.playerTwo.checkers = board.bottom
-        self.board.playableCheckers(for: currentTurn.player)
+        self.currentTurn = Turn(player: firstPlayer, boardAtStartOfTurn: board)
+    }
+    
+    func gameAction(with gameAction: GameAction) {
+        switch gameAction {
+        case .start:
+            self.playerOne.checkers = playerOne.side == .top ? board.top : board.bottom
+            self.playerTwo.checkers = playerTwo.side == .top ? board.top : board.bottom
+            self.board.playableCheckers(for: currentTurn.player)
+            gameDelegate?.gameStarted()
+        case .end(let winner):
+            let loser = playerOne.side == winner.side ? playerOne : playerTwo
+            gameDelegate?.gameOver(winner: winner, loser: loser)
+        }
     }
     
     func takeTurn(action: TurnAction) {
+        turnDelegate?.turnAction(action)
+        
         switch action {
+        case .start:
+            currentTurn.boardAtStartOfTurn = board
+            board.playableCheckers(for: currentTurn.player)
         case .select(let coordinate):
             guard let checker = board[coordinate].occupied, checker.side == currentTurn.player.side else { return }
             clearHighlights()
             board.selectSpace(for: coordinate)
             currentTurn.availableMoves = board.availableMoves(for: checker)
-//            var spaces: [Space] = currentTurn.availableMoves!.compactMap { board[$0.endingCoordinate!] }
-//            spaces.append(board[coordinate])
-//            delegate?.board(updatedAt: spaces)
         case .deselect:
             clearHighlights()
             currentTurn.availableMoves = nil
@@ -114,18 +162,17 @@ class GameManager {
                     print("\(currentTurn.player.name) jumped checker at \(checker.currentCoordinate.description)")
                 }
                 
-                currentTurn.playerMoves.append(board)
                 if board.occupiableByJump.isEmpty {
                     clearHighlights()
                     takeTurn(action: .end)
                 }
             }
         case .end:
+            currentTurn.boardAtEndOfTurn = board
             board.toggleAllMoveable()
-            let nextPlayer = currentTurn.player.side == playerTwo.side ? playerOne : playerTwo
             timeline.append(currentTurn)
-            currentTurn = Turn(player: nextPlayer)
-            board.playableCheckers(for: currentTurn.player)
+            let nextPlayer = currentTurn.player.side == playerTwo.side ? playerOne : playerTwo
+            currentTurn = Turn(player: nextPlayer, boardAtStartOfTurn: board)
         }
     }
     
@@ -138,12 +185,14 @@ class GameManager {
 
 struct Turn {
     
-    var playerMoves: [Board] = []
+    var boardAtStartOfTurn: Board
+    var boardAtEndOfTurn: Board?
     var player: Player
     var availableMoves: [Move]?
     
-    init(player: Player) {
+    init(player: Player, boardAtStartOfTurn: Board) {
         self.player = player
+        self.boardAtStartOfTurn = boardAtStartOfTurn
     }
     
 }

@@ -23,7 +23,7 @@ class ViewController: UIViewController {
         let player1 = Player(name: "James", side: .top)
         let player2 = Player(name: "Wendy", side: .bottom)
         game = GameManager(playerOne: player1, playerTwo: player2, firstPlayer: player2)
-        game.delegate = self
+        game.boardDelegate = self
         player1Label.text = player1.name
         player2Label.text = player2.name
     }
@@ -73,7 +73,7 @@ class ViewController: UIViewController {
 }
 
 // MARK: GameDelegate methods
-extension ViewController: GameManagerDelegate {
+extension ViewController: GameManagerBoardDelegate {
     
     func board(updated board: Board) {
         refresh(board: board)
