@@ -106,9 +106,10 @@ class GameManager {
         self.playerTwo = playerTwo
         self.board = board
         self.currentTurn = Turn(player: firstPlayer, boardAtStartOfTurn: board)
+        gameAction(with: .start)
     }
     
-    func gameAction(with gameAction: GameAction) {
+    private func gameAction(with gameAction: GameAction) {
         switch gameAction {
         case .start:
             self.playerOne.checkers = playerOne.side == .top ? board.top : board.bottom
@@ -147,7 +148,7 @@ class GameManager {
                     let lastSelected = board.selected?.coordinate,
                     let checker = board[lastSelected].occupied
                     else { return }
-                print("\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)")
+                turnDelegate?.messageLog("\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)")
                 
                 board.move(checker: checker, from: lastSelected, to: coordinate)
                 if case .jump(let checker) = move.movementType {
@@ -159,7 +160,7 @@ class GameManager {
                     
                     board[checker.currentCoordinate].occupied = nil
                     board.selectSpace(for: coordinate)
-                    print("\(currentTurn.player.name) jumped checker at \(checker.currentCoordinate.description)")
+                    turnDelegate?.messageLog("\(currentTurn.player.name) jumped checker at \(checker.currentCoordinate.description)")
                 }
                 
                 if board.occupiableByJump.isEmpty {
@@ -173,6 +174,7 @@ class GameManager {
             timeline.append(currentTurn)
             let nextPlayer = currentTurn.player.side == playerTwo.side ? playerOne : playerTwo
             currentTurn = Turn(player: nextPlayer, boardAtStartOfTurn: board)
+            takeTurn(action: .start)
         }
     }
     
