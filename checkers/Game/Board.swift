@@ -246,9 +246,9 @@ extension Board {
             .forEach { self[$0.coordinate].highlightStatus = .none }
     }
     
-    public mutating func availableMoves(for checker: Checker) -> [Move] {
+    public mutating func availableMoves(for checker: Checker, continueJump: Bool = false) -> [Move] {
         let moves = Navigator.availableMoves(with: checker, for: checker.currentCoordinate, board: self)
-        for move in moves {
+        for move in moves where (continueJump && move.movementType != .normal) || (!continueJump)  {
             if let coordinate = move.endingCoordinate {
                 self[coordinate].highlightStatus = move.movementType == .normal ? .occupiable : .occupiableByJump
             }

@@ -7,11 +7,7 @@ class ViewController: UIViewController {
     @IBOutlet weak var player1Label: UILabel!
     @IBOutlet weak var player2Label: UILabel!
     
-    var game: GameManager! {
-        didSet {
-            refresh(board: game.board)
-        }
-    }
+    var game: GameManager!
     
     @IBOutlet weak var boardView: UIView!
     
@@ -20,18 +16,18 @@ class ViewController: UIViewController {
     }
     
     override func viewDidLoad() {
-        let player1 = Player(name: "James", side: .top)
-        let player2 = Player(name: "Wendy", side: .bottom)
-        game = GameManager(playerOne: player1, playerTwo: player2, firstPlayer: player2)
-        game.boardDelegate = self
-        player1Label.text = player1.name
-        player2Label.text = player2.name
+        let gameConfig = GameConfig(player1Name: "James", player1Side: .top, player2Name: "Wendy", player2Side: .bottom, firstTurn: .top)
+        game = GameManager(gameConfig: gameConfig)
+        player1Label.text = game.playerOne.name
+        player2Label.text = game.playerTwo.name
+        setDelegates()
+        game.begin()
     }
     
-    func refresh(board: Board) {
-        createBoard(board)
-        topCheckers.reloadData()
-        bottomCheckers.reloadData()
+    func setDelegates() {
+        game.boardDelegate = self
+        game.gameDelegate = self
+        game.turnDelegate = self
     }
     
     func createBoard(_ board: Board) {
@@ -60,6 +56,16 @@ class ViewController: UIViewController {
         return spaceView
     }
     
+    private func updateBoard(for spaces: [Space]) {
+        for space in spaces {
+            let spaceView = self.spaceView(for: space)
+            if let oldView = boardView.subviews.first(where: {$0.tag == space.coordinate.hashValue}) {
+                boardView.insertSubview(spaceView, aboveSubview: oldView)
+                oldView.removeFromSuperview()
+            }
+        }
+    }
+    
     @objc func selectSpace(_ spaceView: SpaceView) {
         switch spaceView.space.highlightStatus {
         case .occupiable,.occupiableByJump:
@@ -72,27 +78,51 @@ class ViewController: UIViewController {
     }
 }
 
-// MARK: GameDelegate methods
+// MARK: Board delegate methods
+
 extension ViewController: GameManagerBoardDelegate {
     
-    func board(updated board: Board) {
-        refresh(board: board)
-    }
-    
     func board(updatedAt spaces: [Space]) {
-        for space in spaces {
-            let spaceView = self.spaceView(for: space)
-            if let oldView = boardView.subviews.first(where: {$0.tag == space.coordinate.hashValue}) {
-                boardView.insertSubview(spaceView, aboveSubview: oldView)
-                oldView.removeFromSuperview()
-            }
-        }
+        updateBoard(for: spaces)
     }
     
     func board(updatedWith message: String) {
         print(message)
     }
 
+}
+
+// MARK: Game delegate methods
+
+extension ViewController: GameManagerDelegate {
+    
+    func gameStarted(board: Board) {
+        createBoard(board)
+    }
+    
+    func gameOver(winner: Player, loser: Player) {
+        print("\(winner) Wins!!")
+    }
+    
+}
+
+// MARK: Turn delegate methods
+
+extension ViewController: GameManagerTurnDelegate {
+    
+    func messageLog(_ message: String) {
+        print(message)
+    }
+    
+    func turnAction(_ turnAction: TurnAction) {
+        print(turnAction)
+    }
+    
+    func player(updated player: Player) {
+        topCheckers.reloadData()
+        bottomCheckers.reloadData()
+    }
+    
 }
 
 // MARK: CollectionView data source
