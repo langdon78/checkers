@@ -9,6 +9,22 @@ public struct Coordinate: Equatable, CustomStringConvertible, Hashable {
         return "[\(right), \(down)]"
     }
     
+    public var displayable: String {
+        var top: String
+        switch right {
+        case 0: top = "A"
+        case 1: top =  "B"
+        case 2: top =  "C"
+        case 3: top =  "D"
+        case 4: top =  "E"
+        case 5: top =  "F"
+        case 6: top =  "G"
+        case 7: top =  "H"
+        default: top =  String.empty
+        }
+        return "\(top)\(down+1)"
+    }
+    
 }
 
 public typealias AxialDirection = (Int,Int) -> Int
@@ -27,6 +43,15 @@ public enum Direction: Equatable {
             .lowerRight,
             .lowerLeft
         ]
+    }
+    
+    var opposite: Direction {
+        switch self {
+        case .lowerLeft: return .upperRight
+        case .lowerRight: return .upperLeft
+        case .upperLeft: return .lowerRight
+        case .upperRight: return .lowerLeft
+        }
     }
     
 }
@@ -120,12 +145,14 @@ extension Navigator {
         var moves = moves.isEmpty ? possibleMoves(with: checker, from: selectedCoordinate, on: board) : moves
         for move in moves {
             if move.movementType != .normal, let endingCoordinate = move.endingCoordinate {
-                let newMoves = possibleMoves(with: checker, from: endingCoordinate, on: board)
-                moves.append(contentsOf: availableMoves(with: checker, for: endingCoordinate, board: board, moves: newMoves))
+                let nextMovesAfterJump = possibleMoves(with: checker, from: endingCoordinate, on: board)
+                // Filter out moves towards direction where coming from
+                let validMoves = nextMovesAfterJump.filter { $0.direction != move.direction.opposite }
+                if validMoves.isEmpty { continue }
+                moves.append(contentsOf: availableMoves(with: checker, for: endingCoordinate, board: board, moves: validMoves))
             }
         }
         return moves
-
     }
     
     public static func playableCheckers(for player: Player, with board: Board) -> [Coordinate] {
@@ -195,7 +222,8 @@ extension Navigator {
     }
     
     private static func possibleMoves(with playerChecker: Checker, from coordinate: Coordinate, on board: Board) -> [Move] {
-        return availableDirections(for: playerChecker.side, isKing: playerChecker.isKing).compactMap { direction in
+        let directions = availableDirections(for: playerChecker.side, isKing: playerChecker.isKing)
+        return directions.compactMap { direction in
             let move = Move(startingCoordinate: coordinate, direction: direction, movementType: .normal)
             if let spacePlus1 = Navigator.coordinate(with: move) {
                 if let jumpableChecker = board[spacePlus1].occupied,
@@ -205,6 +233,7 @@ extension Navigator {
                         board[spacePlus2].isOpen {
                         return Move(startingCoordinate: coordinate, direction: direction, movementType: .jump(jumpableChecker))
                     }
+                    // Normal move
                 } else if board[spacePlus1].isOpen && !board[coordinate].isOpen {
                     return move
                 }

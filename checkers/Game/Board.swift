@@ -31,7 +31,9 @@ struct Space: Equatable, Hashable {
     var hashValue: Int {
         return coordinate.right.hashValue ^ coordinate.down.hashValue ^ playable.hashValue ^ highlightStatus.hashValue ^ (occupied?.hashValue ?? 1) &* 16777619
     }
-
+    var uniqueLocationKey: Int {
+        return coordinate.hashValue
+    }
     var playable: Bool
     var occupied: Checker?
     var highlightStatus: SpaceHighlightStatus = .none

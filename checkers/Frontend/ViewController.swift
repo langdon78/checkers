@@ -6,8 +6,15 @@ class ViewController: UIViewController {
     @IBOutlet weak var bottomCheckers: UICollectionView!
     @IBOutlet weak var player1Label: UILabel!
     @IBOutlet weak var player2Label: UILabel!
+    @IBOutlet weak var messageTableView: UITableView!
     
     var game: GameManager!
+    var messageQueue: [String] = [] {
+        didSet {
+            messageTableView.reloadData()
+            messageTableView.scrollToRow(at: IndexPath(row: messageQueue.count-1, section: 0), at: .bottom, animated: true)
+        }
+    }
     
     @IBOutlet weak var boardView: UIView!
     
@@ -52,7 +59,7 @@ class ViewController: UIViewController {
         let spaceView = SpaceView(space: space)
         spaceView.backgroundColor = space.playable ? .black : .red
         spaceView.addTarget(self, action: #selector(selectSpace), for: .touchUpInside)
-        spaceView.tag = space.coordinate.hashValue
+        spaceView.tag = space.uniqueLocationKey
         return spaceView
     }
     
@@ -101,7 +108,17 @@ extension ViewController: GameManagerDelegate {
     }
     
     func gameOver(winner: Player, loser: Player) {
-        print("\(winner) Wins!!")
+        print("\(winner.name) Wins!!")
+        let alert = UIAlertController(title: "Game Over", message: "\(winner.name) Wins!!", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Play Again?", style: .default, handler: { [weak self] alert in
+            self?.game = self?.game.newGame()
+            self?.setDelegates()
+            self?.game.begin()
+            self?.topCheckers.reloadData()
+            self?.bottomCheckers.reloadData()
+            self?.messageQueue.removeAll()
+        }))
+        self.present(alert, animated: true, completion: nil)
     }
     
 }
@@ -111,10 +128,10 @@ extension ViewController: GameManagerDelegate {
 extension ViewController: GameManagerTurnDelegate {
     
     func messageLog(_ message: String) {
-        print(message)
+        messageQueue.append(message)
     }
     
-    func turnAction(_ turnAction: TurnAction) {
+    func turnAction(_ turnAction: TurnAction, for: Turn) {
         print(turnAction)
     }
     
@@ -125,8 +142,9 @@ extension ViewController: GameManagerTurnDelegate {
     
 }
 
-// MARK: CollectionView data source
+// MARK: - CollectionView data source
 extension ViewController: UICollectionViewDataSource {
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if collectionView === topCheckers {
             return game.playerOne.captured.count
@@ -151,5 +169,19 @@ extension ViewController: UICollectionViewDataSource {
         return cell
     }
     
+}
+
+// MARK: - Table View data source
+extension ViewController: UITableViewDataSource {
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return messageQueue.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell")!
+        cell.textLabel?.text = messageQueue[indexPath.row]
+        return cell
+    }
     
 }

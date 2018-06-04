@@ -16,7 +16,7 @@ protocol GameManagerBoardDelegate: class {
 protocol GameManagerTurnDelegate: class {
     
     func messageLog(_ message: String)
-    func turnAction(_ turnAction: TurnAction)
+    func turnAction(_ turnAction: TurnAction, for turn: Turn)
     func player(updated player: Player)
     
 }
@@ -75,9 +75,8 @@ class GameManager {
     var timeline: [Turn] = []
     var currentTurn: Turn {
         didSet {
-            if currentTurn.player.captured.count == 12 {
-                gameAction(with: .end(currentTurn.player))
-            }
+            updateCapturedList()
+            checkGameOver()
         }
     }
     
@@ -115,6 +114,11 @@ class GameManager {
         gameAction(with: .start)
     }
     
+    public func newGame() -> GameManager {
+        let gameConfig = GameConfig(player1Name: playerOne.name, player1Side: playerOne.side, player2Name: playerTwo.name, player2Side: playerTwo.side, firstTurn: .top)
+        return GameManager(gameConfig: gameConfig)
+    }
+    
     private func gameAction(with gameAction: GameAction) {
         switch gameAction {
         case .start:
@@ -130,8 +134,22 @@ class GameManager {
         return playerOne.side == side ? playerOne : playerTwo
     }
     
+    private func checkGameOver() {
+        if currentTurn.player.captured.count == 12 {
+            gameAction(with: .end(currentTurn.player))
+        }
+    }
+    
+    private func updateCapturedList() {
+        if currentTurn.player.side == playerOne.side {
+            playerOne.captured = currentTurn.player.captured
+        } else {
+            playerTwo.captured = currentTurn.player.captured
+        }
+    }
+    
     func takeTurn(action: TurnAction) {
-        turnDelegate?.turnAction(action)
+        turnDelegate?.turnAction(action, for: currentTurn)
         
         switch action {
         case .start:
@@ -156,25 +174,29 @@ class GameManager {
                     let lastSelected = board.selected?.coordinate,
                     let checker = board[lastSelected].occupied
                     else { return }
-                turnDelegate?.messageLog("\(currentTurn.player.name) moves checker from \(lastSelected.description) to \(coordinate.description)")
+                turnDelegate?.messageLog("\(currentTurn.player.name) moves checker from \(lastSelected.displayable) to \(coordinate.displayable)")
                 
                 board.move(checker: checker, from: lastSelected, to: coordinate)
-                if case .jump(let checker) = move.movementType {
-                    if currentTurn.player.side == playerOne.side {
-                        playerOne.captured.append(checker)
+                // TODO: Update checkers; change win criteria to checkers.count == 0
+                if board[coordinate].occupied?.isKing == true {
+                    if currentTurn.player == playerOne {
+                        playerTwo.captured.removeLast()
                     } else {
-                        playerTwo.captured.append(checker)
+                        playerOne.captured.removeLast()
                     }
-                    
+                }
+                if case .jump(let checker) = move.movementType {
+                    currentTurn.player.captured.append(checker)
                     board[checker.currentCoordinate].occupied = nil
                     board.selectSpace(for: coordinate)
-                    turnDelegate?.messageLog("\(currentTurn.player.name) jumped checker at \(checker.currentCoordinate.description)")
+                    turnDelegate?.messageLog("\(currentTurn.player.name) jumped checker at \(checker.currentCoordinate.displayable)")
                 }
                 
                 if board.occupiableByJump.isEmpty || move.movementType == .normal {
                     clearHighlights()
                     takeTurn(action: .end)
                 } else {
+                    board.toggleAllOccupiable()
                     guard let newSelected = board.selected?.coordinate, let checker = board[newSelected].occupied else { return }
                     currentTurn.availableMoves = board.availableMoves(for: checker, continueJump: true)
                 }
