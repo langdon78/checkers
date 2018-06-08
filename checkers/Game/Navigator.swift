@@ -155,7 +155,7 @@ extension Navigator {
         return moves
     }
     
-    public static func playableCheckers(for player: Player, with board: Board) -> [Coordinate] {
+    public static func playableCheckers(for player: CheckerPlayer, with board: Board) -> [Coordinate] {
         let playerCheckers = board.checkers(for: player.side)
         return playerCheckers.compactMap { checker in
             let moves = possibleMoves(with: checker, from: checker.currentCoordinate, on: board)

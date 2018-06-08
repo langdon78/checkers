@@ -32,6 +32,7 @@
 		BC6023202066A45400C7C936 /* Navigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigator.swift; sourceTree = "<group>"; };
 		BC6023222066A6BD00C7C936 /* SpaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceView.swift; sourceTree = "<group>"; };
 		BCB6579720C2B1A900F564E1 /* Swift+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Swift+Extensions.swift"; sourceTree = "<group>"; };
+		BCBCD47720C9CF5700ECB1D4 /* BindingFunctions.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; name = BindingFunctions.playground; path = ../../../Playgrounds/BindingFunctions.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +80,7 @@
 				BC60231C2066A3AD00C7C936 /* Board.swift */,
 				BC6023202066A45400C7C936 /* Navigator.swift */,
 				BCB6579720C2B1A900F564E1 /* Swift+Extensions.swift */,
+				BCBCD47720C9CF5700ECB1D4 /* BindingFunctions.playground */,
 			);
 			path = Game;
 			sourceTree = "<group>";

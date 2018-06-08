@@ -35,7 +35,11 @@ struct Space: Equatable, Hashable {
         return coordinate.hashValue
     }
     var playable: Bool
-    var occupied: Checker?
+    var occupied: Checker? {
+        didSet {
+            occupied?.currentCoordinate = coordinate
+        }
+    }
     var highlightStatus: SpaceHighlightStatus = .none
     var coordinate: Coordinate
     
@@ -194,7 +198,6 @@ extension Board {
         checkers
             .forEach { checker in
                 self[checker.currentCoordinate].occupied = checker
-                self[checker.currentCoordinate].occupied?.currentCoordinate = checker.currentCoordinate
         }
     }
     
@@ -219,6 +222,12 @@ extension Board {
 // MARK: - Public API
 extension Board {
     
+    public mutating func update(with spaces: [Space]) {
+        spaces.forEach { space in
+            self[space.coordinate] = space
+        }
+    }
+    
     public mutating func selectSpace(for coordinate: Coordinate) {
         if let selected = selected, selected.coordinate != coordinate {
             toggleAllSelected()
@@ -230,7 +239,6 @@ extension Board {
         self[previousCoordinate].occupied = nil
         self[previousCoordinate].moveable.toggle()
         self[currentCoordinate].occupied = checker
-        self[currentCoordinate].occupied?.currentCoordinate = currentCoordinate
     }
     
     public mutating func toggleAllSelected() {
@@ -258,7 +266,7 @@ extension Board {
         return moves
     }
     
-    public mutating func playableCheckers(for player: Player) {
+    public mutating func playableCheckers(for player: CheckerPlayer) {
         let highlightedCoordinates = Navigator.playableCheckers(for: player, with: self)
         highlightedCoordinates.forEach { coordinate in
             self[coordinate].moveable.toggle()

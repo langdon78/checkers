@@ -23,8 +23,7 @@ class ViewController: UIViewController {
     }
     
     override func viewDidLoad() {
-        let gameConfig = GameConfig(player1Name: "James", player1Side: .top, player2Name: "Wendy", player2Side: .bottom, firstTurn: .top)
-        game = GameManager(gameConfig: gameConfig)
+        game = GameManager()
         player1Label.text = game.playerOne.name
         player2Label.text = game.playerTwo.name
         setDelegates()
@@ -107,11 +106,11 @@ extension ViewController: GameManagerDelegate {
         createBoard(board)
     }
     
-    func gameOver(winner: Player, loser: Player) {
+    func gameOver(winner: CheckerPlayer, loser: CheckerPlayer) {
         print("\(winner.name) Wins!!")
         let alert = UIAlertController(title: "Game Over", message: "\(winner.name) Wins!!", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Play Again?", style: .default, handler: { [weak self] alert in
-            self?.game = self?.game.newGame()
+//            self?.game = self?.game.newGame()
             self?.setDelegates()
             self?.game.begin()
             self?.topCheckers.reloadData()
@@ -135,7 +134,7 @@ extension ViewController: GameManagerTurnDelegate {
         print(turnAction)
     }
     
-    func player(updated player: Player) {
+    func player(updated player: CheckerPlayer) {
         topCheckers.reloadData()
         bottomCheckers.reloadData()
     }
@@ -147,26 +146,30 @@ extension ViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if collectionView === topCheckers {
-            return game.playerOne.captured.count
+            return game.playerOneCapturedCount
         } else {
-            return game.playerTwo.captured.count
+            return game.playerTwoCapturedCount
         }
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath)
-        var checker: Checker?
-        if collectionView === topCheckers {
-            checker = game.playerOne.captured[indexPath.row]
-        } else {
-            checker = game.playerTwo.captured[indexPath.row]
-        }
         let circlePath = UIBezierPath(arcCenter: CGPoint(x: 25,y: 25), radius: CGFloat(12.5), startAngle: CGFloat(0), endAngle:CGFloat(Double.pi * 2), clockwise: true)
         let shapeLayer = CAShapeLayer()
         shapeLayer.path = circlePath.cgPath
-        shapeLayer.fillColor = checker?.side == .top ? UIColor.white.cgColor : UIColor.red.cgColor
+        shapeLayer.fillColor = checkerColor(for: collectionView, player1Side: game.playerOne.side)
         cell.layer.addSublayer(shapeLayer)
         return cell
+    }
+    
+    private func checkerColor(for collectionView: UICollectionView, player1Side: Side) -> CGColor {
+        switch (collectionView, player1Side) {
+        case (topCheckers, .top): return UIColor.red.cgColor
+        case (topCheckers, .bottom): return UIColor.white.cgColor
+        case (bottomCheckers, .top): return UIColor.white.cgColor
+        case (bottomCheckers, .bottom): return UIColor.red.cgColor
+        default: return UIColor.black.cgColor
+        }
     }
     
 }
