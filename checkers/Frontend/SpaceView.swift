@@ -20,18 +20,18 @@ class SpaceView: UIButton {
     
     init(space: Space) {
         self.space = space
-        super.init(frame: CGRect(x: space.coordinate.right * 40, y: space.coordinate.down * 40, width: 40, height: 40))
+        super.init(frame: CGRect(x: ((space.coordinate.right + 1) * 40) - 20, y: ((space.coordinate.down + 1) * 40) - 20, width: 40, height: 40))
 
         
         if space.moveable || space.highlightStatus == .occupiable || space.highlightStatus == .selected || space.highlightStatus == .occupiableByJump {
-            label.text = coordinate.description
+            label.text = coordinate.displayable
             self.layer.borderColor = UIColor.white.cgColor
             self.layer.borderWidth = 1
             if space.highlightStatus == .selected {
                 self.layer.borderColor = UIColor.green.cgColor
                 self.layer.borderWidth = 1
             } else if space.highlightStatus == .occupiableByJump {
-                self.layer.borderColor = UIColor.blue.cgColor
+                self.layer.borderColor = UIColor.magenta.cgColor
                 self.layer.borderWidth = 1
             } else {
                 self.layer.borderColor = UIColor.white.cgColor
@@ -39,7 +39,7 @@ class SpaceView: UIButton {
         } else {
             self.layer.borderWidth = 0
         }
-        addSubview(label)
+//        addSubview(label)
         guard let checker = space.occupied else { return }
         self.backgroundColor = checker.side == .top ? .white : .red
         let circlePath = UIBezierPath(arcCenter: CGPoint(x: 20,y: 20), radius: CGFloat(10), startAngle: CGFloat(0), endAngle:CGFloat(Double.pi * 2), clockwise: true)

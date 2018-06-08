@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BC5A8D6020CB1A6000E70DAE /* CoodinateLabelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5A8D5F20CB1A6000E70DAE /* CoodinateLabelView.swift */; };
+		BC5A8D6220CB2F1900E70DAE /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5A8D6120CB2F1900E70DAE /* SettingsViewController.swift */; };
 		BC6023052066A2E900C7C936 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6023042066A2E900C7C936 /* AppDelegate.swift */; };
 		BC6023072066A2E900C7C936 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6023062066A2E900C7C936 /* ViewController.swift */; };
 		BC60230A2066A2E900C7C936 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC6023082066A2E900C7C936 /* Main.storyboard */; };
@@ -20,6 +22,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BC5A8D5F20CB1A6000E70DAE /* CoodinateLabelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoodinateLabelView.swift; sourceTree = "<group>"; };
+		BC5A8D6120CB2F1900E70DAE /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		BC6023012066A2E900C7C936 /* checkers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = checkers.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC6023042066A2E900C7C936 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		BC6023062066A2E900C7C936 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -101,6 +105,8 @@
 				BC6023082066A2E900C7C936 /* Main.storyboard */,
 				BC6023062066A2E900C7C936 /* ViewController.swift */,
 				BC6023222066A6BD00C7C936 /* SpaceView.swift */,
+				BC5A8D5F20CB1A6000E70DAE /* CoodinateLabelView.swift */,
+				BC5A8D6120CB2F1900E70DAE /* SettingsViewController.swift */,
 			);
 			path = Frontend;
 			sourceTree = "<group>";
@@ -184,6 +190,8 @@
 				BC60231D2066A3AD00C7C936 /* Board.swift in Sources */,
 				BC6023052066A2E900C7C936 /* AppDelegate.swift in Sources */,
 				BC6023212066A45400C7C936 /* Navigator.swift in Sources */,
+				BC5A8D6020CB1A6000E70DAE /* CoodinateLabelView.swift in Sources */,
+				BC5A8D6220CB2F1900E70DAE /* SettingsViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -10,7 +10,15 @@ protocol GameManagerDelegate: class {
 protocol GameManagerBoardDelegate: class {
     
     func board(updatedAt spaces: [Space])
+    func board(updated board: Board)
 
+}
+
+extension GameManagerDelegate {
+    
+    func board(updatedAt spaces: [Space]) {}
+    func board(updated board: Board) {}
+    
 }
 
 protocol GameManagerTurnDelegate: class {
@@ -53,6 +61,7 @@ enum Side{
 protocol CheckerPlayer {
     var name: String { get set }
     var side: Side { get set }
+    var ai: Bool { get set }
 }
 
 extension CheckerPlayer {
@@ -67,16 +76,26 @@ extension CheckerPlayer {
     
 }
 
-struct Player: CheckerPlayer, Equatable {
+struct DefaultPlayer: CheckerPlayer, Equatable {
 
     var name: String
     var side: Side
+    var ai: Bool
 
-    init(name: String, side: Side) {
-        self.name = name
-        self.side = side
+}
+
+struct Turn {
+    
+    var boardAtStartOfTurn: Board
+    var boardAtEndOfTurn: Board?
+    var player: CheckerPlayer
+    var availableMoves: [Move]?
+    
+    init(player: CheckerPlayer, boardAtStartOfTurn: Board) {
+        self.player = player
+        self.boardAtStartOfTurn = boardAtStartOfTurn
     }
-
+    
 }
 
 class GameManager {
@@ -103,6 +122,7 @@ class GameManager {
         didSet {
             let spaces = oldValue.spaceDiff(for: board)
             boardDelegate?.board(updatedAt: spaces)
+            boardDelegate?.board(updated: board)
         }
     }
     
@@ -111,8 +131,8 @@ class GameManager {
     weak var gameDelegate: GameManagerDelegate?
     
     init(board: Board = Board(),
-         player1: CheckerPlayer = Player(name: "Player1", side: .bottom),
-         player2: CheckerPlayer = Player(name: "Player2", side: .top)) {
+         player1: CheckerPlayer = DefaultPlayer(name: "Player1", side: .bottom, ai: false),
+         player2: CheckerPlayer = DefaultPlayer(name: "Computer Jones", side: .top, ai: true)) {
         self.playerOne = player1
         self.playerTwo = player2
         self.board = board
@@ -156,8 +176,8 @@ class GameManager {
         case .move(let coordinate):
             moveSelected(to: coordinate)
         case .direcMove(let current, let new):
-            guard let checker = board[current].occupied else { return }
-            board.move(checker: checker, from: current, to: new)
+            selectSpace(at: current)
+            moveSelected(to: new)
         case .end:
             endTurn()
         }
@@ -171,6 +191,21 @@ class GameManager {
     private func startTurn() {
         currentTurn.boardAtStartOfTurn = board
         board.playableCheckers(for: currentTurn.player)
+        if currentTurn.player.ai {
+            executeAI()
+        }
+    }
+    
+    private func executeAI() {
+        var randomIndex = Int(arc4random_uniform(UInt32(board.moveable.count)))
+        guard randomIndex >= 0 else { return }
+        let moveable = board.moveable[randomIndex]
+        takeTurn(action: .select(moveable.coordinate))
+        guard let availableMoves = currentTurn.availableMoves else { return }
+        randomIndex = Int(arc4random_uniform(UInt32(availableMoves.count)))
+        let move = currentTurn.availableMoves?[randomIndex]
+        guard let coordinate = move?.endingCoordinate else { return }
+        takeTurn(action: .move(coordinate))
     }
     
     private func endTurn() {
@@ -197,9 +232,8 @@ class GameManager {
     }
     
     private func moveSelected(to coordinate: Coordinate) {
-        guard let moves = currentTurn.availableMoves else { return }
-        let paths = Navigator.findPaths(for: moves)
-        guard let path = paths.first(where: { $0.match(with: coordinate) }) else { return }
+        guard let moves = currentTurn.availableMoves,
+            let path = board.paths(for: moves, at: coordinate) else { return }
         
         for move in path.moves {
             guard
@@ -210,18 +244,18 @@ class GameManager {
             
             turnDelegate?.messageLog("\(currentTurn.player.name) moves checker from \(lastSelected.displayable) to \(coordinate.displayable)")
             board.move(checker: checker, from: lastSelected, to: coordinate)
-            handleJump(for: move, to: coordinate)
+            if case .jump(let checker) = move.movementType {
+                handleJump(for: checker, to: coordinate)
+            }
             evaluateEndTurn(for: move)
         }
     }
     
-    private func handleJump(for move: Move, to coordinate: Coordinate) {
-        if case .jump(let checker) = move.movementType {
-            turnDelegate?.player(updated: player(for: checker.side))
-            board[checker.currentCoordinate].occupied = nil
-            board.selectSpace(for: coordinate)
-            turnDelegate?.messageLog("\(currentTurn.player.name) jumped checker at \(checker.currentCoordinate.displayable)")
-        }
+    private func handleJump(for checker: Checker, to coordinate: Coordinate) {
+        turnDelegate?.player(updated: player(for: checker.side))
+        board[checker.currentCoordinate].occupied = nil
+        board.selectSpace(for: coordinate)
+        turnDelegate?.messageLog("\(currentTurn.player.name) jumped \(currentTurn.player.side == playerOne.side ? playerTwo.name : playerOne.name) at \(checker.currentCoordinate.displayable)")
     }
     
     private func evaluateEndTurn(for move: Move) {
@@ -233,20 +267,6 @@ class GameManager {
             guard let newSelected = board.selected?.coordinate, let checker = board[newSelected].occupied else { return }
             currentTurn.availableMoves = board.availableMoves(for: checker, continueJump: true)
         }
-    }
-    
-}
-
-struct Turn {
-    
-    var boardAtStartOfTurn: Board
-    var boardAtEndOfTurn: Board?
-    var player: CheckerPlayer
-    var availableMoves: [Move]?
-    
-    init(player: CheckerPlayer, boardAtStartOfTurn: Board) {
-        self.player = player
-        self.boardAtStartOfTurn = boardAtStartOfTurn
     }
     
 }

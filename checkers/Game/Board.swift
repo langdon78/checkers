@@ -279,4 +279,9 @@ extension Board {
         return Array(newSpaces.subtracting(oldSpaces))
     }
     
+    public func paths(for moves: [Move], at coordinate: Coordinate) -> Path? {
+        let paths = Navigator.findPaths(for: moves)
+        return paths.first(where: { $0.match(with: coordinate) })
+    }
+    
 }

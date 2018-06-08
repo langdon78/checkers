@@ -2,27 +2,47 @@ import Foundation
 
 public struct Coordinate: Equatable, CustomStringConvertible, Hashable {
     
+    struct AlphaCoordinate: Equatable, Hashable {
+        var hashValue: Int {
+            return values.count
+        }
+        let values = ["A","B","C","D","E","F","G","H"]
+        subscript(_ index: Int) -> String {
+            guard index >= 0, index < values.count else { return "" }
+            return values[index]
+        }
+        subscript(_ char: String) -> Int? {
+            guard let index = values.index(where: { $0 == char }) else { return nil }
+            return index
+        }
+    }
+    
     public var right: Int
     public var down: Int
-
+    
     public var description: String {
         return "[\(right), \(down)]"
     }
     
+    var alpha = AlphaCoordinate()
+    
     public var displayable: String {
-        var top: String
-        switch right {
-        case 0: top = "A"
-        case 1: top =  "B"
-        case 2: top =  "C"
-        case 3: top =  "D"
-        case 4: top =  "E"
-        case 5: top =  "F"
-        case 6: top =  "G"
-        case 7: top =  "H"
-        default: top =  String.empty
-        }
-        return "\(top)\(down+1)"
+        return "\(alpha[right])\(down+1)"
+    }
+    
+    init(right: Int, down: Int) {
+        self.right = right
+        self.down = down
+    }
+    
+    init?(value: String) {
+        guard value.count > 0, value.count < 3 else { return nil }
+        guard
+            let firstChar = value.uppercased().first,
+            let right = alpha[String(firstChar)],
+            let lastChar = value.last,
+            let down = Int(String(lastChar)) else { return nil }
+        self = Coordinate(right: right, down: down-1)
     }
     
 }

@@ -12,7 +12,9 @@ class ViewController: UIViewController {
     var messageQueue: [String] = [] {
         didSet {
             messageTableView.reloadData()
-            messageTableView.scrollToRow(at: IndexPath(row: messageQueue.count-1, section: 0), at: .bottom, animated: true)
+            if messageQueue.count > 0 {
+                messageTableView.scrollToRow(at: IndexPath(row: messageQueue.count-1, section: 0), at: .bottom, animated: true)
+            }
         }
     }
     
@@ -23,11 +25,7 @@ class ViewController: UIViewController {
     }
     
     override func viewDidLoad() {
-        game = GameManager()
-        player1Label.text = game.playerOne.name
-        player2Label.text = game.playerTwo.name
-        setDelegates()
-        game.begin()
+        startGame()
     }
     
     func setDelegates() {
@@ -40,17 +38,20 @@ class ViewController: UIViewController {
         boardView.subviews.forEach {
             $0.removeFromSuperview()
         }
-        boardView.layer.borderColor = UIColor.black.cgColor
-        boardView.layer.borderWidth = 2
-        var posY = 0
+        let topRow = Coordinate.AlphaCoordinate().values
+        topRow.enumerated().forEach { (index, letter) in
+            boardView.addSubview(CoordinateLabelView(coordinateLabelText: letter, col: index+1, row: 0))
+        }
+        boardView.backgroundColor = .clear
+        
         for row in board.spaces {
-            var posX = 0
             for space in row {
+                let rowLabel = String(space.coordinate.down+1)
+                let coordinateView = CoordinateLabelView(coordinateLabelText: rowLabel, col: 0, row: space.coordinate.down+1)
+                boardView.addSubview(coordinateView)
                 let spaceView = self.spaceView(for: space)
                 boardView.addSubview(spaceView)
-                posX += 1
             }
-            posY += 1
         }
     }
     
@@ -82,6 +83,22 @@ class ViewController: UIViewController {
             game.takeTurn(action: .select(spaceView.coordinate))
         }
     }
+    
+    private func startGame() {
+        player1Label.text = game.playerOne.name
+        player2Label.text = game.playerTwo.name
+        setDelegates()
+        game.begin()
+        topCheckers.reloadData()
+        bottomCheckers.reloadData()
+        messageQueue.removeAll()
+    }
+    
+    private func restartGame() {
+        game = GameManager()
+        startGame()
+    }
+    
 }
 
 // MARK: Board delegate methods
@@ -110,12 +127,8 @@ extension ViewController: GameManagerDelegate {
         print("\(winner.name) Wins!!")
         let alert = UIAlertController(title: "Game Over", message: "\(winner.name) Wins!!", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Play Again?", style: .default, handler: { [weak self] alert in
-//            self?.game = self?.game.newGame()
-            self?.setDelegates()
-            self?.game.begin()
-            self?.topCheckers.reloadData()
-            self?.bottomCheckers.reloadData()
-            self?.messageQueue.removeAll()
+            self?.restartGame()
+
         }))
         self.present(alert, animated: true, completion: nil)
     }
@@ -184,6 +197,8 @@ extension ViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell")!
         cell.textLabel?.text = messageQueue[indexPath.row]
+        cell.textLabel?.numberOfLines = 3
+        cell.textLabel?.font = UIFont.systemFont(ofSize: UIFont.smallSystemFontSize)
         return cell
     }
     
